@@ -1,0 +1,12 @@
+' M806 - Giris centigi tarafi (M806 P0 = ayna tarafi, M806 P1 = uc tarafi)
+p = Param1()
+SetUserDRO(1023, p)
+If p = 0 Then
+  SetUserLED(1005, 1)
+  SetUserLED(1006, 0)
+  Message "Centik tarafi: ayna"
+Else
+  SetUserLED(1005, 0)
+  SetUserLED(1006, 1)
+  Message "Centik tarafi: uc"
+End If

@@ -49,6 +49,7 @@ vendor/              three.js r128 + OrbitControls (MIT), DejaVu fontları
 tools/               build_all.py, install.py, vbrun.py (VB alt kümesini Python'da çalıştırır)
 tests/               test_macros.py, studio_ui.test.js
 dist/                derleme çıktısı (git'e girmez)
+Mach3/               dist/Mach3'ün git'te tutulan kopyası (build_all.py yazar; elle düzenleme, build sonrası commit et)
 ```
 
 ## Komutlar
@@ -62,7 +63,7 @@ python tools/install.py --mach3 "C:\Mach3" --profile Mach3Mill   # Mach3'e kur (
 ```
 
 **Her değişiklikten sonra:** `python tools/build_all.py && python tests/test_macros.py && node tests/studio_ui.test.js`.
-Testler geçmeden "bitti" deme. Geometri değişikliğinde yeni bir test durumu ekle.
+Testler geçmeden "bitti" deme. Build `Mach3/` klasörünü günceller → onu da commit et. Geometri değişikliğinde yeni bir test durumu ekle.
 
 ## ALTIN KURALLAR
 

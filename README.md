@@ -6,6 +6,17 @@ DIY tüp lazer (Mach3, döner A ekseni) için:
 - **tubestudio.html**: açınım üzerinde CAD tarzı delik çizimi, canlı 3B önizleme (M800'ün kendisiyle hesaplanır)
 - **tubesim.html**: üretilen G-kodun 3B simülasyonu
 
+## Elle kurulum (derleme gerekmez)
+Depodaki `Mach3/` klasörü Mach3 klasör düzenindedir. İndir ve Mach3 kurulum klasörüne (ör. `C:\Mach3`) kopyala:
+
+| Depoda | Mach3'te |
+|---|---|
+| `Mach3/macros/Mach3Mill/*.m1s` | `C:\Mach3\macros\<profil>\` (profil farklıysa o klasöre) |
+| `Mach3/Addons/TubeCutting/` | `C:\Mach3\Addons\TubeCutting\` |
+| `Mach3/Addons/TubeStudio/` | `C:\Mach3\Addons\TubeStudio\` |
+
+Kopyalamadan önce eski dosyaların yedeğini al. Sonra Mach3'ü yeniden başlat.
+
 ## Hızlı başlangıç
 ```bash
 python tools/build_all.py                                         # dist/Mach3/ altına derle

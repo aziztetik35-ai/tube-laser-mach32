@@ -1,0 +1,230 @@
+' M820 - Tube Studio konfigurasyonunu ice aktar (Addons\TubeStudio\tubecut_config.txt)
+mf = GetMainFolder()
+If Right(mf, 1) <> "\" Then
+  mf = mf & "\"
+End If
+dosya = mf & "Addons\TubeStudio\tubecut_config.txt"
+If Dir(dosya) = "" Then
+  Message "Konfigurasyon dosyasi yok - Studio'da 'Wizard'a gönder'e basin"
+Else
+  Open dosya For Input As #1
+  bas = ""
+  If EOF(1) = 0 Then
+    Line Input #1, bas
+  End If
+  If Left(bas, 10) <> "TUBESTUDIO" Then
+    Close #1
+    Message "HATA: Gecersiz konfigurasyon dosyasi"
+  Else
+    adet = 0
+    For i = 1 To 2000
+      If EOF(1) Then
+        Exit For
+      End If
+      Line Input #1, satir
+      k = InStr(satir, "=")
+      If k > 1 Then
+        dn = Val(Left(satir, k - 1))
+        dv = Val(Mid(satir, k + 1))
+        If dn >= 1000 Then
+          If dn <= 1299 Then
+            SetUserDRO(dn, dv)
+            adet = adet + 1
+          End If
+        End If
+      End If
+    Next i
+    Close #1
+    SetUserDRO(1039, 1)
+' --- seçili deligi düzenleme alanina yükle
+zc = Int(GetUserDRO(1039) + 0.5)
+If zc < 1 Then
+  zc = 1
+End If
+If zc > 8 Then
+  zc = 8
+End If
+SetUserDRO(1039, zc)
+zh = 1100 + (zc - 1) * 10
+For zi = 0 To 6
+  SetUserDRO(1040 + zi, GetUserDRO(zh + zi))
+Next zi
+' --- ekrani tazele: LED'ler, ölçü basliklari, delik listesi
+zc = Int(GetUserDRO(1039) + 0.5)
+If zc < 1 Then
+  zc = 1
+End If
+If zc > 8 Then
+  zc = 8
+End If
+For zi = 1 To 8
+  SetUserLED(1019 + zi, 0)
+Next zi
+SetUserLED(1019 + zc, 1)
+zt = Int(GetUserDRO(1040) + 0.5)
+For zi = 0 To 3
+  SetUserLED(1030 + zi, 0)
+Next zi
+If zt >= 0 Then
+  If zt <= 3 Then
+    SetUserLED(1030 + zt, 1)
+  End If
+End If
+zk = Int(GetUserDRO(1042) / 90 + 0.5)
+zk = zk - 4 * Int(zk / 4)
+For zi = 0 To 3
+  SetUserLED(1034 + zi, 0)
+Next zi
+SetUserLED(1034 + zk, 1)
+zl1 = "-"
+zl2 = "-"
+zl3 = "-"
+If zt = 1 Then
+  zl1 = "Çap (mm)"
+End If
+If zt = 2 Then
+  zl1 = "Boy (mm)"
+  zl2 = "En (mm)"
+End If
+If zt = 3 Then
+  zl1 = "Boy (mm)"
+  zl2 = "En (mm)"
+  zl3 = "Köse radyüsü (mm)"
+End If
+SetUserLabel(1, zl1)
+SetUserLabel(2, zl2)
+SetUserLabel(3, zl3)
+For zi = 1 To 8
+  zh = 1100 + (zi - 1) * 10
+  zt = Int(GetUserDRO(zh) + 0.5)
+  zs = zi & "  -"
+  If zt >= 1 Then
+    If zt <= 3 Then
+      zL = Int(GetUserDRO(zh + 4) * 100 + 0.5) / 100
+      zW = Int(GetUserDRO(zh + 5) * 100 + 0.5) / 100
+      zR = Int(GetUserDRO(zh + 6) * 100 + 0.5) / 100
+      zX = Int(GetUserDRO(zh + 1) * 100 + 0.5) / 100
+      zA = Int(GetUserDRO(zh + 2) * 10 + 0.5) / 10
+      zY = Int(GetUserDRO(zh + 3) * 100 + 0.5) / 100
+      If zt = 1 Then
+        zs = zi & "  Yuvarlak Ø" & zL
+      End If
+      If zt = 2 Then
+        zs = zi & "  Oval " & zL & " × " & zW
+      End If
+      If zt = 3 Then
+        zs = zi & "  Pencere " & zL & " × " & zW
+        If zR > 0 Then
+          zs = zs & " R" & zR
+        End If
+      End If
+      zs = zs & "  ·  X " & zX
+      If GetUserDRO(1000) = 0 Then
+        zs = zs & "  ·  A " & zA & "°"
+      Else
+        zk = Int(zA / 90 + 0.5)
+        zk = zk - 4 * Int(zk / 4)
+        zs = zs & "  ·  Yüzey " & (zk + 1)
+      End If
+      If zY <> 0 Then
+        zs = zs & "  ·  ofset " & zY
+      End If
+    End If
+  End If
+  SetUserLabel(10 + zi, zs)
+Next zi
+' --- LED'leri degerlere gore tazele
+SetUserLED(1000, 0)
+SetUserLED(1001, 0)
+If GetUserDRO(1000) = 0 Then
+  SetUserLED(1000, 1)
+Else
+  SetUserLED(1001, 1)
+End If
+SetUserLED(1003, 0)
+SetUserLED(1004, 0)
+If GetUserDRO(1019) = 0 Then
+  SetUserLED(1003, 1)
+Else
+  SetUserLED(1004, 1)
+End If
+SetUserLED(1005, 0)
+SetUserLED(1006, 0)
+If GetUserDRO(1023) = 0 Then
+  SetUserLED(1005, 1)
+Else
+  SetUserLED(1006, 1)
+End If
+SetUserLED(1007, 0)
+SetUserLED(1008, 0)
+If GetUserDRO(1030) = 0 Then
+  SetUserLED(1007, 1)
+Else
+  SetUserLED(1008, 1)
+End If
+SetUserLED(1009, 0)
+SetUserLED(1010, 0)
+SetUserLED(1011, 0)
+If GetUserDRO(1031) = 0 Then
+  SetUserLED(1009, 1)
+End If
+If GetUserDRO(1031) = 1 Then
+  SetUserLED(1010, 1)
+End If
+If GetUserDRO(1031) = 2 Then
+  SetUserLED(1011, 1)
+End If
+' --- Tube Studio wizard ozet satirlari (UserLabel 31-36)
+If GetUserDRO(1000) = 0 Then
+  zs = "Yuvarlak Ø" & GetUserDRO(1001)
+Else
+  zs = "Dikdörtgen " & GetUserDRO(1002) & " × " & GetUserDRO(1003)
+  If GetUserDRO(1005) > 0 Then
+    zs = zs & " R" & GetUserDRO(1005)
+  End If
+End If
+SetUserLabel(31, "Profil:   " & zs & "   ·   et " & GetUserDRO(1004) & " mm")
+SetUserLabel(32, "Kesim:   X0 " & GetUserDRO(1008) & "   ·   L " & GetUserDRO(1017) & "   ·   " & GetUserDRO(1018) & " adet   ·   gönye " & GetUserDRO(1006) & "° / " & GetUserDRO(1007) & "°")
+zs = "Gönye"
+If GetUserDRO(1030) = 1 Then
+  zs = "Balik agzi Ø" & GetUserDRO(1032) & " / " & GetUserDRO(1033) & "°"
+  If GetUserDRO(1031) = 0 Then
+    zs = zs & "  (uç yönü)"
+  End If
+  If GetUserDRO(1031) = 1 Then
+    zs = zs & "  (ayna yönü)"
+  End If
+  If GetUserDRO(1031) = 2 Then
+    zs = zs & "  (iki uç)"
+  End If
+End If
+If GetUserDRO(1000) = 1 Then
+  If GetUserDRO(1019) = 1 Then
+    zs = zs & "   ·   tek seferde"
+  Else
+    zs = zs & "   ·   kenar kenar"
+  End If
+End If
+SetUserLabel(33, "Uç:   " & zs)
+zn = 0
+For zi = 0 To 19
+  If GetUserDRO(1100 + zi * 10) >= 1 Then
+    zn = zn + 1
+  End If
+Next zi
+SetUserLabel(34, "Delik:   " & zn & " adet (her parçada)")
+SetUserLabel(35, "Proses:   F " & GetUserDRO(1009) & "   ·   S " & GetUserDRO(1014) & "   ·   pierce " & GetUserDRO(1010) & " s   ·   kesim Z " & GetUserDRO(1013))
+zs = "yok"
+If GetUserDRO(1022) > 0 Then
+  zs = GetUserDRO(1022) & " mm"
+  If GetUserDRO(1023) = 0 Then
+    zs = zs & ", ayna yönü"
+  Else
+    zs = zs & ", uç yönü"
+  End If
+End If
+SetUserLabel(36, "Çentik:   " & zs)
+    SaveWizard()
+    Message "Konfigürasyon içe aktarildi (" & adet & " deger) - Kod üret'e basin"
+  End If
+End If

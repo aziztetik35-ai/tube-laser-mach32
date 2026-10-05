@@ -5,6 +5,8 @@
   dist/Mach3/Addons/TubeCutting/                 klasik wizard (2 sayfa) + tubesim.html
   dist/Mach3/Addons/TubeStudio/                  Tube Studio wizard + tubestudio.html
   dist/previews/                                 ekran önizleme PNG'leri ve yerleşim CSV'leri
+Ayrıca dist/Mach3 içeriği depo kökündeki Mach3/ klasörüne kopyalanır (git'te tutulur, elle kopyalamak için):
+  Mach3/macros/Mach3Mill/*.m1s, Mach3/Addons/TubeCutting/, Mach3/Addons/TubeStudio/
 """
 import os, sys, glob, shutil, subprocess, re
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -26,6 +28,16 @@ def build_macros():
         open(os.path.join(out, os.path.basename(src)[:-4] + ".m1s"), "wb").write(t.replace("\n", "\r\n").encode("cp1252"))
     print("makrolar:", len(glob.glob(os.path.join(out, "*.m1s"))))
 
+PROFILE = "Mach3Mill"
+
+def sync_repo_copy():
+    """dist/Mach3 -> <depo>/Mach3 (makrolar profil klasörüne). Klasör her derlemede yeniden yazılır."""
+    dst = os.path.join(ROOT, "Mach3")
+    if os.path.isdir(dst): shutil.rmtree(dst)
+    shutil.copytree(os.path.join(M3, "Addons"), os.path.join(dst, "Addons"))
+    shutil.copytree(os.path.join(M3, "macros"), os.path.join(dst, "macros", PROFILE))
+    print("Depo kopyası ->", dst)
+
 def build_wizard(name, gens, setscript, keep):
     d = os.path.join(M3, "Addons", name); os.makedirs(d, exist_ok=True)
     pv = os.path.join(DIST, "previews"); os.makedirs(pv, exist_ok=True)
@@ -43,4 +55,5 @@ if __name__ == "__main__":
     run([os.path.join(ROOT, "sim", "build.py"), os.path.join(M3, "Addons", "TubeCutting", "tubesim.html")], ROOT)
     build_wizard("TubeStudio", ["tubestudio/gen_bg.py"], "tubestudio/build_set.py", {"TubeStudio.set", "tubestudio_bg.bmp"})
     run([os.path.join(ROOT, "studio", "build.py"), os.path.join(M3, "Addons", "TubeStudio", "tubestudio.html")], ROOT)
+    sync_repo_copy()
     print("Bitti ->", M3)
