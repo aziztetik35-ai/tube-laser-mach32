@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.set binary
+*.bmp binary
+*.ttf binary
+*.png binary

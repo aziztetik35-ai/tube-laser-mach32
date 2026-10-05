@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tube Studio · Boru kesim konfigüratörü</title>
+<style>
+  :root { --bg:#c8cdd2; --panel:#e4e7ea; --panel2:#eef0f2; --edge:#969da4; --txt:#1f2a33; --sub:#5c6670; --pri:#2f5d8a; --pri2:#24496d; --dark:#1e2329; --ok:#2e7d4f; --bad:#b0413e; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--txt); font: 14px "Segoe UI", Tahoma, Arial, sans-serif; display: flex; flex-direction: column; }
+  header { background: #3a4856; color: #f0f2f4; padding: 8px 14px; display: flex; align-items: center; gap: 14px; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header .src { color: #bec6ce; font-size: 12px; }
+  header .sp { flex: 1; }
+  header button, .tool { background: #4e5e6e; color: #eef1f4; border: 1px solid #6b7b8b; padding: 6px 12px; font: inherit; cursor: pointer; }
+  header button:hover { background: #5a6b7c; }
+  #send { background: #2f7d55; border-color: #23633f; font-weight: 600; padding: 8px 18px; }
+  #send:hover { background: #378f62; }
+  .dir { font-size: 11px; color: #bec6ce; }
+  .dir a { color: #d6e4f2; }
+  main { flex: 1; display: flex; gap: 10px; padding: 10px; min-height: 0; }
+  #left { width: 420px; display: flex; flex-direction: column; min-height: 0; }
+  #form { flex: 1; overflow-y: auto; padding-right: 4px; }
+  section { background: var(--panel); border: 1px solid var(--edge); margin-bottom: 8px; }
+  .sechead { width: 100%; display: flex; align-items: center; gap: 10px; background: #d4d8dc; border: 0; border-bottom: 1px solid var(--edge); padding: 8px 12px; font: 600 15px "Segoe UI", Arial, sans-serif; color: var(--txt); cursor: pointer; text-align: left; }
+  section.collapsed .sechead { border-bottom: 0; }
+  .sechead .num { width: 22px; height: 22px; border-radius: 50%; background: var(--pri); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .sechead .chev { margin-left: auto; color: var(--sub); }
+  .body { padding: 6px 12px 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 0; }
+  .row.full { display: block; }
+  .row label { flex: 1; }
+  .row label small { display: block; color: var(--sub); font-size: 11px; }
+  .ctl { display: flex; align-items: center; gap: 6px; }
+  .ctl input { width: 104px; padding: 5px 7px; font: 600 15px "Segoe UI", Arial, sans-serif; text-align: right; border: 1px solid var(--edge); background: #fff; }
+  .ctl input:focus { outline: 2px solid var(--pri); outline-offset: -1px; }
+  .unit { width: 40px; color: var(--sub); font-size: 12px; }
+  .withchips { display: flex; gap: 4px; align-items: center; }
+  .withchips input { width: 74px; }
+  .chip { border: 1px solid var(--edge); background: var(--panel2); padding: 4px 6px; font: inherit; font-size: 12px; cursor: pointer; }
+  .chip.on { background: var(--pri); color: #fff; border-color: var(--pri2); }
+  .seg { display: flex; }
+  .seg button { flex: 1; border: 1px solid var(--edge); background: var(--panel2); padding: 7px 10px; font: inherit; cursor: pointer; margin-left: -1px; }
+  .seg button:first-child { margin-left: 0; }
+  .seg button.on { background: var(--pri); color: #fff; border-color: var(--pri2); position: relative; }
+  .hole { background: #fff; border: 1px solid #c4cad0; padding: 6px 10px 8px; margin: 6px 0 8px; }
+  .hhead { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .hhead .seg { flex: 1; } .hhead .seg button { padding: 5px 6px; font-size: 13px; }
+  .del { border: 1px solid #c9a3a1; background: #f6eceb; color: var(--bad); font-size: 18px; line-height: 1; width: 30px; height: 30px; cursor: pointer; }
+  .add { width: 100%; padding: 9px; border: 1px dashed var(--pri); background: #eaf0f6; color: var(--pri); font: 600 14px "Segoe UI", Arial, sans-serif; cursor: pointer; }
+  .empty { color: var(--sub); font-size: 13px; margin: 6px 0; }
+  #right { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); border: 1px solid var(--edge); }
+  .tabs { display: flex; border-bottom: 1px solid var(--edge); background: #d4d8dc; align-items: stretch; }
+  .tabs > button { border: 0; border-right: 1px solid var(--edge); background: transparent; padding: 8px 16px; font: inherit; font-weight: 600; color: var(--sub); cursor: pointer; }
+  .tabs > button.active { background: var(--panel); color: var(--txt); }
+  .tabs .sp { flex: 1; }
+  .tabs label { display: flex; align-items: center; gap: 5px; padding: 0 10px; color: var(--sub); font-size: 13px; }
+  .tabs .tool { background: transparent; color: var(--sub); border: 0; border-left: 1px solid var(--edge); }
+  #status { padding: 0 14px; display: flex; align-items: center; font-weight: 600; font-size: 13px; color: #fff; max-width: 45%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  #status.ok { background: var(--ok); } #status.bad { background: var(--bad); }
+  #stage { flex: 1; position: relative; min-height: 0; background: var(--dark); }
+  #view3d, #unfold, #drawcv { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #drawcv { touch-action: none; }
+  #drawbar { display: none; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 6px 10px; background: var(--panel2); border-bottom: 1px solid var(--edge); font-size: 13px; }
+  #drawbar .grp { display: flex; align-items: center; gap: 4px; }
+  #drawbar button { border: 1px solid var(--edge); background: #fff; padding: 5px 9px; font: inherit; cursor: pointer; }
+  #drawbar button.on { background: var(--pri); color: #fff; border-color: var(--pri2); }
+  #drawbar input[type=number] { width: 54px; padding: 3px 4px; font: inherit; border: 1px solid var(--edge); }
+  #drawbar label { display: flex; align-items: center; gap: 3px; color: var(--txt); }
+  #drawbar .snap span, #dupbox span { color: var(--sub); }
+  #edinfo { flex-basis: 100%; color: var(--sub); font-size: 12px; min-height: 16px; }
+  .hole.sel { border-color: var(--pri); box-shadow: 0 0 0 2px rgba(47,93,138,.35); }
+  #gcodebox { display: none; position: absolute; inset: 0; padding: 10px; background: #fff; }
+  #gcodebox textarea { width: 100%; height: calc(100% - 40px); font: 12px Consolas, monospace; border: 1px solid var(--edge); }
+  #hud { position: absolute; left: 10px; top: 10px; color: #cfd6dd; font: 12px Consolas, monospace; pointer-events: none; line-height: 1.6; }
+  #laser { display: inline-block; padding: 1px 8px; background: #3a434c; } #laser.on { background: #c0392b; color: #fff; }
+  #msgbar { padding: 0 12px; font-size: 13px; }
+  #msgbar.err { background: #f6e1e0; color: #7a1f1c; padding: 7px 12px; border-top: 1px solid #d9a5a2; }
+  #msgbar.warn { background: #f7efd9; color: #6b5310; padding: 7px 12px; border-top: 1px solid #dfc98e; }
+  #stats { display: grid; grid-template-columns: repeat(8, 1fr); border-top: 1px solid var(--edge); background: var(--panel2); }
+  #stats div { padding: 6px 10px; border-right: 1px solid #d0d5da; }
+  #stats span { display: block; color: var(--sub); font-size: 11px; }
+  #stats b { font-size: 15px; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-top: 1px solid var(--edge); }
+  .bar button { background: #eef0f2; border: 1px solid #78808a; padding: 5px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  .bar button.pri { background: var(--pri); color: #fff; border-color: var(--pri2); min-width: 120px; }
+  .bar input[type=range] { flex: 1; }
+  #time { font: 13px Consolas, monospace; min-width: 110px; text-align: right; }
+  #line { font: 11px Consolas, monospace; color: var(--sub); padding: 0 10px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #24313d; color: #fff; padding: 10px 18px; opacity: 0; transition: .25s; pointer-events: none; max-width: 80%; }
+  #toast.show { opacity: 1; transform: translateX(-50%); } #toast.bad { background: var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tube Studio</h1><span class="src" id="source"></span>
+  <span class="sp"></span>
+  <button id="resetAll" title="Wizard'daki değerlere dön">Sıfırla</button>
+  <button id="openJob">İş aç</button><button id="saveJob">İş kaydet</button>
+  <input type="file" id="jobfile" accept=".json" hidden>
+  <div style="text-align:right"><button id="send">Wizard'a gönder  →</button>
+    <div class="dir">Klasör: <span id="dirname">seçilmedi</span> · <a href="#" id="chdir">değiştir</a></div></div>
+</header>
+<main>
+  <aside id="left"><div id="form"></div></aside>
+  <section id="right">
+    <div class="tabs">
+      <button id="tab_draw" class="active">Çizim</button>
+      <button id="tab_3d">3B görünüm</button>
+      <button id="tab_unfold">Açınım (2B)</button>
+      <button id="tab_gcode">G-kod</button>
+      <div class="sp"></div>
+      <label><input type="checkbox" id="showRapid" checked> Boşta hareketler</label>
+      <label><input type="checkbox" id="ghost"> Yarı saydam</label>
+      <button id="resetView" class="tool">Görünümü sıfırla</button>
+      <div id="status" class="ok">Hazır</div>
+    </div>
+    <div id="drawbar">
+      <div class="grp"><button id="t_select" title="Seç / taşı (V)">⬚ Seç</button><button id="t_round" title="Yuvarlak delik çiz (C)">◯ Yuvarlak</button><button id="t_oval" title="Oval delik çiz (O)">⬭ Oval</button><button id="t_window" title="Pencere çiz (R)">▭ Pencere</button></div>
+      <div class="grp snap"><span>Yakalama:</span>
+        <label><input type="checkbox" id="s_grid">Izgara</label><input id="s_step" type="number" value="1" min="0.1" step="0.5" title="Izgara adımı (mm)">
+        <label><input type="checkbox" id="s_center">Merkez</label><label><input type="checkbox" id="s_edge">Kenar</label>
+        <label><input type="checkbox" id="s_align">Hizala</label><label><input type="checkbox" id="s_ortho">Ortho</label></div>
+      <div class="grp" id="dupbox"><span>Çoğalt:</span><input id="d_n" type="number" value="3" min="1" title="Kopya sayısı"><span>× ΔX</span><input id="d_dx" type="number" value="50" title="X adımı (mm)"><span>Δçevre</span><input id="d_dt" type="number" value="0" title="Çevre yönünde adım (mm)"><button id="e_dup">Uygula</button></div>
+      <div class="grp"><button id="e_del" title="Sil (Del)">Sil</button><button id="e_undo" title="Geri al (Ctrl+Z)">↶</button><button id="e_redo" title="Yinele (Ctrl+Y)">↷</button><button id="e_fit" title="Sığdır (F)">Sığdır</button></div>
+      <div id="edinfo">Çizmek için bir araç seçin; deliği sürükleyerek taşıyın, köşe tutamaklarından boyutlandırın.</div>
+    </div>
+    <div id="stage">
+      <div id="view3d"></div><canvas id="unfold"></canvas><canvas id="drawcv"></canvas>
+      <div id="gcodebox"><textarea id="gcode" readonly></textarea><div class="bar" style="border:0;padding:6px 0"><button id="dlTap">G-kodu indir (.tap)</button><span style="color:#5c6670;font-size:12px">Mach3'te bu kodu M800 üretir; buradaki önizleme aynı makrodan hesaplanır.</span></div></div>
+      <div id="hud"><span id="laser">Lazer kapalı</span><br><span id="pos"></span></div>
+    </div>
+    <div id="msgbar"></div>
+    <div id="stats"></div>
+    <div class="bar" id="playbar">
+      <button id="rewind" title="Başa sar">⏮</button>
+      <button id="play" class="pri">▶  Oynat</button>
+      <button id="toEnd" title="Sona git">⏭</button>
+      <input type="range" id="scrub" min="0" max="1000" value="1000">
+      <span id="time"></span>
+      <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option><option value="25">25×</option></select>
+    </div>
+    <div id="line"></div>
+  </section>
+</main>
+<div id="toast"></div>
+<!--LIBS-->
+<script src="wizard_state.js"></script>
+<!--APP-->
+</body>
+</html>

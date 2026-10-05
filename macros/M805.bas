@@ -1,0 +1,12 @@
+' M805 - Dikdortgen kesim sekli (M805 P0 = kenar kenar, M805 P1 = tek seferde)
+p = Param1()
+SetUserDRO(1019, p)
+If p = 0 Then
+  SetUserLED(1003, 1)
+  SetUserLED(1004, 0)
+  Message "Kesim sekli: kenar kenar"
+Else
+  SetUserLED(1003, 0)
+  SetUserLED(1004, 1)
+  Message "Kesim sekli: tek seferde"
+End If

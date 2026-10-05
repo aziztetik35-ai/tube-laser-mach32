@@ -1,0 +1,11 @@
+dist/
+node_modules/
+studio/m800.js
+__pycache__/
+*.pyc
+# makinede üretilen kullanıcı verileri
+tubecut.dat
+tubecut_config.txt
+wizard_state.js
+tubesim_data.js
+*.tap

@@ -1,0 +1,31 @@
+' M803 - Parametreleri kaydet
+' DRO 1000-1033 ve 1100-1297 (delikler), x1000 tamsayi = ondalik ayirac sorunu yok
+' --- seçili deligi sakla (düzenleme alani 1040-1046 -> 1100 + (no-1)*10)
+zc = Int(GetUserDRO(1039) + 0.5)
+If zc < 1 Then
+  zc = 1
+End If
+If zc > 8 Then
+  zc = 8
+End If
+zh = 1100 + (zc - 1) * 10
+For zi = 0 To 6
+  SetUserDRO(zh + zi, GetUserDRO(1040 + zi))
+Next zi
+SaveWizard()
+mf = GetMainFolder()
+If Right(mf, 1) <> "\" Then
+  mf = mf & "\"
+End If
+dosya = mf & "Addons\TubeCutting\tubecut.dat"
+Open dosya For Output As #1
+For i = 1000 To 1033
+  v = GetUserDRO(i)
+  Print #1, CLng(v * 1000)
+Next i
+For i = 1100 To 1297
+  v = GetUserDRO(i)
+  Print #1, CLng(v * 1000)
+Next i
+Close #1
+Message "Parametreler kaydedildi"

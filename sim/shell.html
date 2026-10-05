@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boru kesim simülasyonu</title>
+<style>
+  :root { --bg:#c8cdd2; --panel:#e4e7ea; --edge:#969da4; --txt:#1f2a33; --sub:#5c6670; --pri:#2f5d8a; --dark:#1e2329; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--txt); font: 14px "Segoe UI", Tahoma, Arial, sans-serif; display: flex; flex-direction: column; }
+  header { background: #3a4856; color: #f0f2f4; padding: 10px 16px; display: flex; align-items: baseline; gap: 16px; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header span { color: #bec6ce; font-size: 12px; }
+  main { flex: 1; display: flex; gap: 10px; padding: 10px; min-height: 0; }
+  #left { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--panel); border: 1px solid var(--edge); }
+  .tabs { display: flex; border-bottom: 1px solid var(--edge); background: #d4d8dc; }
+  .tabs button { border: 0; border-right: 1px solid var(--edge); background: transparent; padding: 8px 18px; font: inherit; font-weight: 600; color: var(--sub); cursor: pointer; }
+  .tabs button.active { background: var(--panel); color: var(--txt); }
+  .tabs .spacer { flex: 1; }
+  .tabs label { display: flex; align-items: center; gap: 6px; padding: 0 12px; color: var(--sub); font-size: 13px; }
+  .tabs .tool { border-left: 1px solid var(--edge); border-right: 0; font-weight: 400; }
+  #stage { flex: 1; position: relative; min-height: 0; background: var(--dark); }
+  #view3d, #unfold { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #hud { position: absolute; left: 10px; top: 10px; color: #cfd6dd; font: 12px Consolas, monospace; pointer-events: none; line-height: 1.6; }
+  #laser { display: inline-block; padding: 1px 8px; border-radius: 2px; background: #3a434c; }
+  #laser.on { background: #c0392b; color: #fff; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--edge); }
+  .bar button { background: #eef0f2; border: 1px solid #78808a; padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; min-width: 44px; }
+  .bar button.pri { background: var(--pri); color: #fff; border-color: #24496d; min-width: 120px; }
+  .bar input[type=range] { flex: 1; }
+  .bar select { font: inherit; padding: 4px; }
+  #time { font: 13px Consolas, monospace; min-width: 120px; text-align: right; }
+  #right { width: 300px; display: flex; flex-direction: column; gap: 10px; }
+  .box { background: var(--panel); border: 1px solid var(--edge); }
+  .box h2 { margin: 0; font-size: 14px; padding: 7px 12px; background: #d4d8dc; border-bottom: 1px solid var(--edge); }
+  dl { margin: 0; padding: 8px 12px; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; }
+  dt { color: var(--sub); } dd { margin: 0; text-align: right; font-weight: 600; }
+  .legend { padding: 8px 12px; display: grid; gap: 6px; font-size: 13px; }
+  .legend i { display: inline-block; width: 22px; height: 3px; vertical-align: middle; margin-right: 8px; }
+  .legend i.dot { width: 9px; height: 9px; border-radius: 50%; margin: 0 21px 0 6px; }
+  #warnbox { display: none; border-color: #b0413e; }
+  #warnbox h2 { background: #b0413e; color: #fff; border-color: #b0413e; }
+  #warn { margin: 0; padding: 8px 12px 8px 28px; color: #7a1f1c; }
+  #line { padding: 8px 12px; font: 12px Consolas, monospace; color: var(--sub); word-break: break-all; }
+  #nodata { display: none; position: fixed; inset: 0; background: var(--bg); align-items: center; justify-content: center; text-align: center; }
+  #nodata div { background: var(--panel); border: 1px solid var(--edge); padding: 28px 36px; max-width: 460px; }
+</style>
+</head>
+<body>
+<header><h1>Boru kesim simülasyonu</h1><span>TubeCutting · Mach3 · Atetik</span></header>
+<main>
+  <section id="left">
+    <div class="tabs">
+      <button id="tab3d" class="active">3B görünüm</button>
+      <button id="tabUnfold">Açınım (2B)</button>
+      <div class="spacer"></div>
+      <label><input type="checkbox" id="showRapid" checked> Boşta hareketler</label>
+      <label><input type="checkbox" id="ghost"> Yarı saydam boru</label>
+      <button id="resetView" class="tool">Görünümü sıfırla</button>
+    </div>
+    <div id="stage">
+      <div id="view3d"></div>
+      <canvas id="unfold"></canvas>
+      <div id="hud"><span id="laser">Lazer kapalı</span><br><span id="pos"></span></div>
+    </div>
+    <div class="bar">
+      <button id="rewind" title="Başa sar">⏮</button>
+      <button id="play" class="pri">▶  Oynat</button>
+      <button id="toEnd" title="Sona git">⏭</button>
+      <input type="range" id="scrub" min="0" max="1000" value="0">
+      <span id="time"></span>
+      <select id="speed" title="Hız">
+        <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+        <option value="5">5×</option><option value="10">10×</option><option value="25">25×</option>
+      </select>
+    </div>
+  </section>
+  <aside id="right">
+    <div class="box" id="warnbox"><h2>Uyarı</h2><ul id="warn"></ul></div>
+    <div class="box"><h2>Program</h2><dl id="info"></dl></div>
+    <div class="box"><h2>Gösterim</h2>
+      <div class="legend">
+        <div><i style="background:#ff5a1f"></i>Kesilen yol</div>
+        <div><i style="background:#7a3a26"></i>Kesilecek yol</div>
+        <div><i style="background:#d68cff"></i>Hız limitine takılan kesim</div>
+        <div><i style="background:#8fa3b5"></i>Boşta hareket</div>
+        <div><i class="dot" style="background:#ffd23f"></i>Delme noktası</div>
+        <div style="color:#5c6670;font-size:12px;margin-top:4px">Kafa X'te sabit; ayna boruyu X ekseninde sürer. Z0 = boru üst yüzeyi.</div>
+      </div>
+    </div>
+    <div class="box"><h2>G-kod</h2><div id="line"></div></div>
+  </aside>
+</main>
+<div id="nodata"><div><h2>Simülasyon verisi yok</h2><p>Önce wizard'da <b>Kod üret</b> butonuna basın, sonra <b>Simülasyon</b>'u tekrar açın.</p></div></div>
+<!--THREE-->
+<script src="tubesim_data.js"></script>
+<!--APP-->
+</body>
+</html>

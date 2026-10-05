@@ -1,0 +1,10 @@
+{
+  "name": "tube-laser-mach3",
+  "private": true,
+  "description": "DIY tüp lazer (Mach3, A ekseni) – wizard'lar, M800 makrosu, Tube Studio konfigüratörü",
+  "scripts": {
+    "build": "python tools/build_all.py",
+    "test": "python tests/test_macros.py && node tests/studio_ui.test.js"
+  },
+  "devDependencies": { "jsdom": "^24.0.0" }
+}

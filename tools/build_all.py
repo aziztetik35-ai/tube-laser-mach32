@@ -1,0 +1,46 @@
+"""Her şeyi derler: dist/Mach3/ altına Mach3 klasör düzeninde.
+   python tools/build_all.py
+Çıktı:
+  dist/Mach3/macros/*.m1s                       (cp1252 + CRLF; profil klasörüne kopyalanır)
+  dist/Mach3/Addons/TubeCutting/                 klasik wizard (2 sayfa) + tubesim.html
+  dist/Mach3/Addons/TubeStudio/                  Tube Studio wizard + tubestudio.html
+  dist/previews/                                 ekran önizleme PNG'leri ve yerleşim CSV'leri
+"""
+import os, sys, glob, shutil, subprocess, re
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+DIST = os.path.join(ROOT, "dist"); M3 = os.path.join(DIST, "Mach3")
+PY = sys.executable
+
+def run(args, cwd):
+    r = subprocess.run([PY] + args, cwd=cwd, capture_output=True, text=True)
+    if r.returncode: print(r.stdout, r.stderr); raise SystemExit("HATA: " + " ".join(args))
+
+def build_macros():
+    out = os.path.join(M3, "macros"); os.makedirs(out, exist_ok=True)
+    for src in sorted(glob.glob(os.path.join(ROOT, "macros", "*.bas"))):
+        t = open(src, encoding="utf-8").read().replace("\r\n", "\n")
+        for i, line in enumerate(t.split("\n"), 1):
+            try: line.encode("cp1252")
+            except UnicodeEncodeError as e:
+                raise SystemExit(f"HATA {os.path.basename(src)}:{i}: cp1252 dışı karakter {line[e.start]!r} (ı ş ğ İ Ş Ğ kullanmayın)")
+        open(os.path.join(out, os.path.basename(src)[:-4] + ".m1s"), "wb").write(t.replace("\n", "\r\n").encode("cp1252"))
+    print("makrolar:", len(glob.glob(os.path.join(out, "*.m1s"))))
+
+def build_wizard(name, gens, setscript, keep):
+    d = os.path.join(M3, "Addons", name); os.makedirs(d, exist_ok=True)
+    pv = os.path.join(DIST, "previews"); os.makedirs(pv, exist_ok=True)
+    for g in gens: run([os.path.join(ROOT, "wizard", g)], d)
+    run([os.path.join(ROOT, "wizard", setscript)], d)
+    for f in os.listdir(d):                       # önizleme ve ara dosyaları ayır
+        if f not in keep: shutil.move(os.path.join(d, f), os.path.join(pv, f))
+    print(name + ":", sorted(os.listdir(d)))
+
+if __name__ == "__main__":
+    if os.path.isdir(DIST): shutil.rmtree(DIST)
+    build_macros()
+    build_wizard("TubeCutting", ["tubecutting/gen_page1.py", "tubecutting/gen_page2.py"], "tubecutting/build_set.py",
+                 {"TubeCutting.set", "tube_wizard_bg.bmp", "tube_wizard_sayfa2.bmp"})
+    run([os.path.join(ROOT, "sim", "build.py"), os.path.join(M3, "Addons", "TubeCutting", "tubesim.html")], ROOT)
+    build_wizard("TubeStudio", ["tubestudio/gen_bg.py"], "tubestudio/build_set.py", {"TubeStudio.set", "tubestudio_bg.bmp"})
+    run([os.path.join(ROOT, "studio", "build.py"), os.path.join(M3, "Addons", "TubeStudio", "tubestudio.html")], ROOT)
+    print("Bitti ->", M3)
