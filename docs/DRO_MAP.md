@@ -1,5 +1,7 @@
 # DRO / LED / Etiket haritası
 
+Bu sayfa lazer wizard'ları (TubeCutting, TubeStudio) içindir. Freze wizard'ı (TubeMill, DRO 1500–1677, M900–M906): `mill/README.md`.
+
 ## User DRO (M800 girdileri)
 | DRO | Anlam | Not |
 |---|---|---|

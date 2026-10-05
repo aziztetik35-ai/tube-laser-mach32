@@ -4,6 +4,7 @@
   dist/Mach3/macros/*.m1s                       (cp1252 + CRLF; profil klasörüne kopyalanır)
   dist/Mach3/Addons/TubeCutting/                 klasik wizard (2 sayfa) + tubesim.html
   dist/Mach3/Addons/TubeStudio/                  Tube Studio wizard + tubestudio.html
+  dist/Mach3/Addons/TubeMill/                    boru freze wizard'ı (mill/; makrolar M900-M906)
   dist/previews/                                 ekran önizleme PNG'leri ve yerleşim CSV'leri
 Ayrıca dist/Mach3 içeriği depo kökündeki Mach3/ klasörüne kopyalanır (git'te tutulur, elle kopyalamak için):
   Mach3/macros/Mach3Mill/*.m1s, Mach3/Addons/TubeCutting/, Mach3/Addons/TubeStudio/
@@ -19,7 +20,7 @@ def run(args, cwd):
 
 def build_macros():
     out = os.path.join(M3, "macros"); os.makedirs(out, exist_ok=True)
-    for src in sorted(glob.glob(os.path.join(ROOT, "macros", "*.bas"))):
+    for src in sorted(glob.glob(os.path.join(ROOT, "macros", "*.bas")) + glob.glob(os.path.join(ROOT, "mill", "macros", "*.bas"))):
         t = open(src, encoding="utf-8").read().replace("\r\n", "\n")
         for i, line in enumerate(t.split("\n"), 1):
             try: line.encode("cp1252")
@@ -41,8 +42,8 @@ def sync_repo_copy():
 def build_wizard(name, gens, setscript, keep):
     d = os.path.join(M3, "Addons", name); os.makedirs(d, exist_ok=True)
     pv = os.path.join(DIST, "previews"); os.makedirs(pv, exist_ok=True)
-    for g in gens: run([os.path.join(ROOT, "wizard", g)], d)
-    run([os.path.join(ROOT, "wizard", setscript)], d)
+    for g in gens: run([os.path.join(ROOT, g)], d)
+    run([os.path.join(ROOT, setscript)], d)
     for f in os.listdir(d):                       # önizleme ve ara dosyaları ayır
         if f not in keep: shutil.move(os.path.join(d, f), os.path.join(pv, f))
     print(name + ":", sorted(os.listdir(d)))
@@ -50,10 +51,12 @@ def build_wizard(name, gens, setscript, keep):
 if __name__ == "__main__":
     if os.path.isdir(DIST): shutil.rmtree(DIST)
     build_macros()
-    build_wizard("TubeCutting", ["tubecutting/gen_page1.py", "tubecutting/gen_page2.py"], "tubecutting/build_set.py",
+    build_wizard("TubeCutting", ["wizard/tubecutting/gen_page1.py", "wizard/tubecutting/gen_page2.py"], "wizard/tubecutting/build_set.py",
                  {"TubeCutting.set", "tube_wizard_bg.bmp", "tube_wizard_sayfa2.bmp"})
     run([os.path.join(ROOT, "sim", "build.py"), os.path.join(M3, "Addons", "TubeCutting", "tubesim.html")], ROOT)
-    build_wizard("TubeStudio", ["tubestudio/gen_bg.py"], "tubestudio/build_set.py", {"TubeStudio.set", "tubestudio_bg.bmp"})
+    build_wizard("TubeStudio", ["wizard/tubestudio/gen_bg.py"], "wizard/tubestudio/build_set.py", {"TubeStudio.set", "tubestudio_bg.bmp"})
     run([os.path.join(ROOT, "studio", "build.py"), os.path.join(M3, "Addons", "TubeStudio", "tubestudio.html")], ROOT)
+    build_wizard("TubeMill", ["mill/wizard/gen_page1.py", "mill/wizard/gen_page2.py"], "mill/wizard/build_set.py",
+                 {"TubeMill.set", "tubemill_bg.bmp", "tubemill_sayfa2.bmp"})
     sync_repo_copy()
     print("Bitti ->", M3)

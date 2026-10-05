@@ -1,0 +1,56 @@
+"""TubeMill.set üretir (yerlesim_mill1.csv + yerlesim_mill2.csv). Kayıt biçimi reference/ örneklerinden klonlanır."""
+import struct, csv, os
+HERE = os.path.dirname(os.path.abspath(__file__))
+REF = os.path.join(HERE, "..", "..", "reference")
+exec(open(os.path.join(HERE, "..", "..", "wizard", "common", "setlib.py")).read().split('d=open')[0])
+src = open(os.path.join(REF, "TubeCutting_ornek.set"), "rb").read()
+BG = src[8:101]; TRAILER = src[621:]; assert len(TRAILER) == 44
+
+def s(t):
+    b = t.encode("cp1252"); assert len(b) < 255; return bytes([len(b)]) + b
+def rec(typ, kind, cap, code, oem, fmt, rect, page=1, img="None"):
+    return (struct.pack("<3i", typ, kind, page) + s(cap) + s(code) + s(img) + b"\0" * 8 + s("Text")
+            + struct.pack("<2i", 0, oem) + b"\0" * 12 + s(fmt) + struct.pack("<i", 0)
+            + struct.pack("<4i", rect[0], rect[1], rect[0] + rect[2], rect[1] + rect[3]))
+def bg_page(page, fname):
+    b = BG; q = 8; strs = []
+    for _ in range(3):
+        L = b[q]; strs.append(b[q + 1:q + 1 + L]); q += 1 + L
+    return struct.pack("<i", 0) + b[0:4] + struct.pack("<i", page) + bytes([len(strs[0])]) + strs[0] + bytes([len(strs[1])]) + strs[1] + s(fname) + b[q:]
+
+d24 = open(os.path.join(REF, "1024.set"), "rb").read(); o24, _ = parse(d24)
+def clone_rect(i, page, rect):
+    x = o24[i]; b = bytearray(d24[x['st']:x['en']]); struct.pack_into("<i", b, 8, page)
+    struct.pack_into("<4i", b, len(b) - 16, rect[0], rect[1], rect[0] + rect[2], rect[1] + rect[3]); return bytes(b)
+er0 = next(x for x in o24 if x['txt'] == "Error"); tp = next(x['i'] for x in o24 if x['k'] == 11)
+def label_text(text, rect, page=1):
+    b0 = d24[er0['st']:er0['en']]; q = 12
+    for _ in range(3): q += 1 + b0[q]
+    q += 8; L = b0[q]; tail = b0[q + 1 + L:]; t = text.encode("cp1252")
+    nb = bytearray(b0[:q] + bytes([len(t)]) + t + tail); struct.pack_into("<i", nb, 8, page)
+    struct.pack_into("<4i", nb, len(nb) - 16, rect[0], rect[1], rect[0] + rect[2], rect[1] + rect[3]); return bytes(nb)
+
+# buton başlıkları cp1252 (ı ş ğ İ yok)
+CAP = {"Çıkış": "Kapat", "Varsayılan": "Varsayilan", "Balık ağzı": "Balik agzi", "İki uç": "Iki uç", "Tırmanma": "Tirmanma", "M8 sıvı": "M8 sivi"}
+objs = [bg_page(2, "tubemill_sayfa2.bmp")]
+for page, fn in ((1, "yerlesim_mill1.csv"), (2, "yerlesim_mill2.csv")):
+    for r in csv.reader(open(fn, encoding="utf-8-sig"), delimiter=";"):
+        t = r[0]
+        if t == "Tip": continue
+        x, y, w, h = map(int, map(float, r[2:6])); rc = (x, y, w, h)
+        if t == "DRO": objs.append(rec(12, 1, "Text", "None\r\n", int(r[6].split()[-1]), r[8], rc, page))
+        elif t == "LED": objs.append(rec(56, 6, "Text", "None\r\n", int(r[6].split()[-1]), "", rc, page))
+        elif t == "BUTON":
+            cap = CAP.get(r[1], r[1])
+            if r[6] == "EXIT": objs.append(rec(34, 4, cap, "SaveWizard()\r\nDoOEMButton(231)", 0, "", rc, page))
+            elif r[6].startswith("OEM:"): objs.append(rec(32, 4, cap, "None", int(r[6][4:]), "", rc, page))   # OEM n = n. sayfa
+            else: objs.append(rec(33, 4, cap, r[6] + "\r\n", 0, "", rc, page))
+        elif t == "TOOLPATH": objs.append(clone_rect(tp, page, rc))
+        elif t == "LABEL": objs.append(label_text("Error", rc, page))
+objs.append(label_text("Desc Boru freze - takim ile kesim, gonye, balik agzi, delik", (0, -40, 200, 17)))
+objs.append(label_text("Author Atetik", (0, -22, 200, 17)))
+out = struct.pack("<i", 1 + len(objs)) + bg_page(1, "tubemill_bg.bmp") + b"".join(objs) + TRAILER
+o2, p2 = parse(out); assert p2 == len(out) - 44 and len(o2) == len(objs) + 1
+open("TubeMill.set", "wb").write(out)
+from collections import Counter
+print(len(o2), "kayıt; sayfa:", Counter(x['pg'] for x in o2), "DRO:", sum(1 for x in o2 if x['k'] == 1), "buton:", sum(1 for x in o2 if x['k'] == 4))

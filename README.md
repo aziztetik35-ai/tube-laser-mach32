@@ -5,6 +5,7 @@ DIY tüp lazer (Mach3, döner A ekseni) için:
 - **TubeCutting** wizard'ı (klasik, 2 sayfa) ve **TubeStudio** wizard'ı (tarayıcı konfigüratörü + içe aktar)
 - **tubestudio.html**: açınım üzerinde CAD tarzı delik çizimi, canlı 3B önizleme (M800'ün kendisiyle hesaplanır)
 - **tubesim.html**: üretilen G-kodun 3B simülasyonu
+- **TubeMill** wizard'ı (`mill/`): lazer yerine **freze takımı** ile kesim ve delik (M900–M906). Ayrıntı: `mill/README.md`
 
 ## Elle kurulum (derleme gerekmez)
 Depodaki `Mach3/` klasörü Mach3 klasör düzenindedir. İndir ve Mach3 kurulum klasörüne (ör. `C:\Mach3`) kopyala:
@@ -14,6 +15,7 @@ Depodaki `Mach3/` klasörü Mach3 klasör düzenindedir. İndir ve Mach3 kurulum
 | `Mach3/macros/Mach3Mill/*.m1s` | `C:\Mach3\macros\<profil>\` (profil farklıysa o klasöre) |
 | `Mach3/Addons/TubeCutting/` | `C:\Mach3\Addons\TubeCutting\` |
 | `Mach3/Addons/TubeStudio/` | `C:\Mach3\Addons\TubeStudio\` |
+| `Mach3/Addons/TubeMill/` | `C:\Mach3\Addons\TubeMill\` |
 
 Kopyalamadan önce eski dosyaların yedeğini al. Sonra Mach3'ü yeniden başlat.
 
@@ -25,7 +27,7 @@ python tools/install.py --mach3 "C:\Mach3" --profile Mach3Mill    # Mach3'e kur 
 Gereksinim: Python 3.10+ ve Pillow (`pip install pillow`). Testler için Node 18+ (`npm install`).
 
 ```bash
-python tests/test_macros.py && node tests/studio_ui.test.js
+python tests/test_macros.py && node tests/studio_ui.test.js && python mill/tests/test_mill.py
 ```
 
 ## Makinede

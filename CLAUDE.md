@@ -5,6 +5,8 @@ Kullanıcı Türkçe konuşur, kısa ve öz cevap ister (gereksiz açıklama yok
 
 ## Proje nedir
 
+> Bu dosyanın çoğu lazer içindir. **TubeMill** (freze takımı ile kesim/delik) `mill/` altındadır; kuralları ve DRO haritası `mill/README.md`.
+
 DIY tüp lazer kesim makinası (Mach3 + döner A ekseni). Üç parça:
 
 1. **M800 makrosu** (`macros/M800.bas`) — bütün kesim G-kodunu üreten tek kaynak.
@@ -48,6 +50,7 @@ studio/              vb2js.py, viewer.js, editor.js, studio.js, shell.html, buil
 vendor/              three.js r128 + OrbitControls (MIT), DejaVu fontları
 tools/               build_all.py, install.py, vbrun.py (VB alt kümesini Python'da çalıştırır)
 tests/               test_macros.py, studio_ui.test.js
+mill/                TubeMill (freze): macros/M900-M906.bas, wizard/ (ui, gen_page1/2, build_set), tests/test_mill.py
 dist/                derleme çıktısı (git'e girmez)
 Mach3/               dist/Mach3'ün git'te tutulan kopyası (build_all.py yazar; elle düzenleme, build sonrası commit et)
 ```
@@ -59,10 +62,11 @@ npm install                       # yalnız test için (jsdom)
 python tools/build_all.py         # her şeyi dist/Mach3/ altına derler
 python tests/test_macros.py       # makro testleri (sözdizimi, Python==JS, geometri, kaydet/yükle/içe aktar)
 node tests/studio_ui.test.js      # Studio arayüz testi (build sonrası)
+python mill/tests/test_mill.py    # TubeMill makro testleri (takım telafisi, derinlik, delik, güvenlik)
 python tools/install.py --mach3 "C:\Mach3" --profile Mach3Mill   # Mach3'e kur (yedek alır), --dry-run ile dene
 ```
 
-**Her değişiklikten sonra:** `python tools/build_all.py && python tests/test_macros.py && node tests/studio_ui.test.js`.
+**Her değişiklikten sonra:** `python tools/build_all.py && python tests/test_macros.py && node tests/studio_ui.test.js && python mill/tests/test_mill.py`.
 Testler geçmeden "bitti" deme. Build `Mach3/` klasörünü günceller → onu da commit et. Geometri değişikliğinde yeni bir test durumu ekle.
 
 ## ALTIN KURALLAR
@@ -89,6 +93,7 @@ Testler geçmeden "bitti" deme. Build `Mach3/` klasörünü günceller → onu d
    - LOAD (seçili delik → düzenleme alanı): M804, M810, M820
    - REFRESH (LED'ler, ölçü başlıkları UserLabel 1–3, delik listesi 11–18): M799, M800, M804, M810, M811, M812, M820
    - LED tazeleme (1000–1011): M804, M820 · Özet (UserLabel 31–36): M820, M821
+   - MILL-LED (TubeMill LED'leri 1500–1512): M900–M906 (test aynılığını kontrol eder)
 5. **Klasik wizard'ın 2. sayfası yalnız ilk 8 deliği** gösterir/düzenler; M800 20 deliği keser (DRO 1100–1297).
 6. **Kullanıcı verisini ezme:** `tubecut.dat`, `tubecut_config.txt`, `wizard_state.js`, `tubesim_data.js` makinede üretilir; repoya koyma.
 7. Güvenlik: kesim sırasını, X0/Z0 referansını veya G1/G93 düzenini değiştiren her şeyi kullanıcıya açıkça söyle
