@@ -24,6 +24,8 @@ SetUserDRO(1521, 0)
 SetUserDRO(1522, 2)
 SetUserDRO(1523, 0)
 SetUserDRO(1524, 0)
+SetUserDRO(1525, 0)
+SetUserDRO(1529, 0)
 SetUserDRO(1530, 0)
 SetUserDRO(1531, 0)
 SetUserDRO(1532, 50)
@@ -34,7 +36,7 @@ For zh = 0 To 7
     SetUserDRO(1600 + zh * 10 + zc, 0)
   Next zc
 Next zh
-'--- MILL-LED basla (M900-M906 icinde AYNI kalmali)
+'--- MILL-LED basla (M900-M906 ve M908 icinde AYNI kalmali)
 zv = Int(GetUserDRO(1500) + 0.5)
 SetUserLED(1500, 0)
 SetUserLED(1501, 0)

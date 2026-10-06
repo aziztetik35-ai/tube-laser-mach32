@@ -4,8 +4,11 @@
 3) Delikler: kontur ölçüsü, delme (gagalama), yiv, tırmanma / konvansiyonel yönü, derinlik
 4) Güvenlik: G0 ile malzemede yan hareket yok, iş mili kesimden önce açık, G93 satırlarında F var
 5) Hata mesajları ve seçim makroları (M902-M906)
+6) Takım çapı düzeltmesi ve delik bitirme pasosu
+7) Kaydet / yükle (M907 / M908)
+8) Simülasyon: tubemillsim.html ve tubesim.html veriyle hatasız açılıyor (önce: python tools/build_all.py)
 """
-import os, sys, re, glob, math
+import os, sys, re, glob, math, json, subprocess, tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "tools")); import vbrun
 MAC = lambda n: open(os.path.join(ROOT, "mill", "macros", n + ".bas"), encoding="utf-8").read()
@@ -63,8 +66,8 @@ for p in sorted(glob.glob(os.path.join(ROOT, "mill", "macros", "*.bas"))):
     except Exception: tr = False
     check(enc and ok and not st and single is None and tr, f"{n}: cp1252={enc} blok={ok and not st} yasak_satır={single} çeviri={tr}")
     m = re.search(r"'--- MILL-LED basla.*?'--- MILL-LED bitti", s, re.S)
-    blocks[n] = m.group(0) if m else None
-check(all(blocks.values()) and len(set(blocks.values())) == 1, "MILL-LED bloğu M900-M906'da aynı (%d makro)" % len(blocks))
+    if n not in ("M907.bas", "M909.bas"): blocks[n] = "\n".join(x.strip() for x in m.group(0).split("\n")) if m else None
+check(all(blocks.values()) and len(set(blocks.values())) == 1, "MILL-LED bloğu M900-M906 ve M908'de aynı (%d makro)" % len(blocks))
 
 print("2) Uç kesimi")
 # dikdörtgen 60×30, 90°, 2 parça, takım 6: kesim ortak çizgi, aralık L + takım Ø
@@ -178,6 +181,58 @@ for m, dn, p, led in [("M902", 1500, 1, 1501), ("M903", 1530, 1, 1504), ("M904",
     st = dro({}); leds = {}
     vbrun.run(MAC(m), st, {}, {}, shared=True, leds_in=leds, param1=p)
     check(st[dn] == p and leds.get(led) == 1, f"{m} P{p}: DRO {dn} = {st[dn]}, LED {led} yanık")
+
+print("6) Takım çapı düzeltmesi ve bitirme pasosu")
+d = dro({1500: 1, 1529: -0.1, 1525: 0.3}, [(1, 50, 0, 0, 20, 0, 0), (1, 100, 0, 0, 6.2, 0, 0)])
+out, msgs, _ = gen(d); mv = parse(out)
+c = sorted(set(m["pos"]["X"] for m in mv if m["g"] == 1 and m["grp"] and "kesimi" in m["grp"][1]))
+check(c == [10 - 2.95, 310 + 2.95], f"uç kesimi düzeltilmiş takım yarıçapıyla (2.95): {c}")
+h1 = [m["pos"] for m in mv if m["grp"] == (1, "delik 1") and m["g"] == 1]
+zb = min(p["Z"] for p in h1)
+rr = [round(math.hypot(p["X"] - 60, p["Y"]), 3) for p in h1 if p["Z"] == zb]
+check(abs(min(rr) - 6.75) < 0.002 and abs(max(rr) - 7.05) < 0.002 and abs(rr[-1] - 7.05) < 0.002,
+      f"Ø20 delik: kaba tur r {min(rr)} (pay 0.3), son tur bitirme r {rr[-1]} (10 - 2.95)")
+h2 = [m["pos"] for m in mv if m["grp"] == (1, "delik 2") and m["g"] == 1]
+check(len(set((p["X"], p["Y"]) for p in h2)) > 10 and abs(max(math.hypot(p["X"] - 110, p["Y"]) for p in h2) - 0.15) < 0.002,
+      "Ø6.2 delik: kaba = delme, bitirme r 0.15")
+out, msgs, _ = gen(dro({1525: 3}))
+check(not out and "Bitirme payi" in msgs[-1], "bitirme payı > 2 hatası")
+out, msgs, _ = gen(dro({}, [(1, 50, 0, 0, 20, 0, 0)]))
+check(sum(1 for m in parse(out) if m["grp"] == (1, "delik 1") and m["g"] == 1 and m["pos"]["Z"] == -2.5) <= 80, "pay 0: bitirme turu yok")
+
+print("7) Kaydet / yükle")
+st = dro({1500: 1, 1502: 62.5, 1514: 350, 1525: 0.2, 1529: -0.05}, [(3, 77.7, 90, 1.5, 30, 12, 2)]); files = {}
+vbrun.run(MAC("M907"), st, {}, files, shared=True)
+saved = {k: st.get(k, 0) for k in list(range(1500, 1526)) + list(range(1529, 1534)) + list(range(1600, 1678))}
+st2 = dro({}); st2[1526] = 99; leds = {}
+_, msgs, *_ = vbrun.run(MAC("M908"), st2, {}, files, shared=True, leds_in=leds)
+check(all(abs(st2.get(k, 0) - v) < 1e-9 for k, v in saved.items()) and st2[1526] == 0 and leds.get(1501) == 1, "M907 -> M908: tüm değerler ve LED'ler geri geldi: " + msgs[-1])
+_, msgs, *_ = vbrun.run(MAC("M908"), dro({}), {}, {}, shared=True)
+check("Kayit dosyasi yok" in msgs[-1], "kayıt yokken mesaj")
+
+print("8) Simülasyon sayfaları")
+def simcheck(html, data_lines):
+    tmp = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8"); tmp.write("\n".join(data_lines)); tmp.close()
+    r = subprocess.run(["node", os.path.join(ROOT, "mill", "tests", "sim_check.js"), html, tmp.name], capture_output=True, text=True)
+    return json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip() else {"errors": [r.stderr[-300:]]}
+dist = os.path.join(ROOT, "dist", "Mach3", "Addons")
+files = {}
+vbrun.run(MAC("M900"), dro({1500: 1, 1510: 2}, HOLES), {"VelocitiesX": 100, "VelocitiesA": 60}, files, shared=True)
+r = simcheck(os.path.join(dist, "TubeMill", "tubemillsim.html"), files["C:\\Mach3\\Addons\\TubeMill\\tubemill_data.js"])
+check(not r["errors"] and r.get("title") == "Boru freze simülasyonu" and "Takım Ø6" in r.get("info", "") and "çarpışma" not in r.get("warn", "")
+      and "İş mili" in r.get("hud", ""), "tubemillsim: hatasız, freze modu, çarpışma uyarısı yok " + str(r["errors"])[:200])
+bad = [l for l in files["C:\\Mach3\\Addons\\TubeMill\\tubemill_data.js"]]
+i = next(k for k, l in enumerate(bad) if '"G1 X' in l)
+bad.insert(i + 1, '"G0 X5 Y0",')
+r = simcheck(os.path.join(dist, "TubeMill", "tubemillsim.html"), bad)
+check("çarpışma" in r.get("warn", ""), "tubemillsim: malzemede G0 yan hareketi uyarı veriyor")
+sys.path.insert(0, os.path.join(ROOT, "tests"))
+LBASE = {1000: 1, 1001: 50, 1002: 40, 1003: 40, 1004: 2, 1005: 3, 1006: 45, 1007: 45, 1008: 60, 1009: 1200, 1010: 0.3, 1011: 0.2,
+         1012: 25, 1013: 1, 1014: 800, 1015: 2, 1016: 2, 1017: 300, 1018: 1, 1019: 1, 1022: 3, 1023: 1, 1030: 0, 1031: 0, 1032: 60, 1033: 90}
+files = {}
+vbrun.run(open(os.path.join(ROOT, "macros", "M800.bas"), encoding="utf-8").read(), dict(LBASE), {"VelocitiesX": 100, "VelocitiesA": 60}, files, shared=True)
+r = simcheck(os.path.join(dist, "TubeCutting", "tubesim.html"), files["C:\\Mach3\\Addons\\TubeCutting\\tubesim_data.js"])
+check(not r["errors"] and r.get("title") == "Boru kesim simülasyonu" and "Lazer" in r.get("hud", ""), "tubesim (lazer): hatasız, lazer modu " + str(r["errors"])[:200])
 
 print("\nSONUÇ:", "BAŞARILI" if not fails else f"{len(fails)} HATA")
 sys.exit(1 if fails else 0)

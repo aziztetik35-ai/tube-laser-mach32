@@ -37,10 +37,11 @@ Durum: 2026-10. Öncelik: **Y** yüksek, **O** orta, **D** düşük.
 
 | Ö | Konu | Öneri |
 |---|---|---|
-| Y | Kaydet / yükle yok (lazerde M803 / M804 var) | M907 / M908: DRO 1500–1677'yi `tubemill.dat` dosyasına ×1000 tamsayı ile yaz / oku |
-| Y | Simülasyon yok (tubesim yalnız lazer) | M900 `tubemill_data.js` yazsın; tubesim'e takım çapı ve derinlik gösteren freze modu |
-| O | Bitirme pasosu yok | Radyal bitirme payı DRO'su: kaba kontur + son tam derinlikte ince paso (daha iyi delik ölçüsü) |
-| O | Takım çapı telafisi yalnız nominal | "Ölçülen takım çapı / aşınma" DRO'su; delik ölçüsü sapınca kullanıcı düzeltir |
+| ✔ | Kaydet / yükle | **Yapıldı:** M907 / M908, `tubemill.dat` (sürümlü) |
+| ✔ | Simülasyon | **Yapıldı:** M909 + `tubemillsim.html` (tubesim freze modu: takım, kesim izi, malzemede G0 uyarısı) |
+| ✔ | Bitirme pasosu | **Yapıldı (delikler):** DRO 1525. Uç kesiminde mümkün değil (arka kesim parçayı ayırır) |
+| ✔ | Takım çapı düzeltmesi | **Yapıldı:** DRO 1529 (ölçülen − nominal) |
+| O | Simülasyonda kesilen malzeme görünmüyor | Katı model / voxel ile kalan malzemeyi göster |
 | O | Kesilen göbek serbest düşüyor | Köprü (tab) seçeneği: son pasoda N adet köprü bırak |
 | O | Pencere R < takım yarıçapı: köşe takım yarıçapında kalıyor, uyarı yok | Mesaj satırında uyarı |
 | O | Süre tahmini G0 hareketlerini içermiyor | `GetParam("Velocities..")` ile hızlı hareket süresini ekle |

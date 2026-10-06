@@ -65,7 +65,11 @@ pg.note(358, 460, 644, [
     "Oval W = takım Ø  →  yiv (takım eksen boyunca git-gel).  Büyük delik: kontur, rampa ile iner.",
     "Pencere köşesi en az takım yarıçapı kadar yuvarlak kalır (R < takım Ø/2 ise).",
     "Takım yolu ölçüye göre içe kaydırılır (G41/G42 kullanılmaz).  Kesilen göbek düşer:",
-    "küçük delikte sorun yok, büyük pencerede göbeği bant veya mıknatısla tutun."], h=158)
+    "küçük delikte sorun yok, büyük pencerede göbeği bant veya mıknatısla tutun."], h=150)
+d.text((358, 626), "Delik kesim yönü", font=f(14, True), fill=TXT)
+pg.button(490, 620, 130, 30, "Tırmanma", "M906 P0"); pg.ledsock(626, 628, 1511, "tırmanma (saat yönü tersi)")
+pg.button(656, 620, 150, 30, "Konvansiyonel", "M906 P1"); pg.ledsock(812, 628, 1512, "konvansiyonel")
+d.text((838, 628), "(M3 iş mili için)", font=f(12), fill=SUB)
 
 pg.status()
 pg.button(10, 706, 180, 48, "<< Ana sayfa", "OEM:1", note="1. sayfaya git")

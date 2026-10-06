@@ -9,6 +9,8 @@
   }
 
   var D = TUBE_DATA;
+  var MILL = D.mode === "freze";             // TubeMill: freze takımı (M900)
+  var TR = MILL ? (+D.tcap || 6) / 2 : 0;    // takım yarıçapı
   var prof = SIMCORE.profileOf(D);
   var lim = { x: +D.vx || 0, y: +D.vy || 0, z: +D.vz || 0, a: +D.va || 0 };
   var limKnown = lim.x > 0 && lim.a > 0;
@@ -22,9 +24,15 @@
   // yüzey konumlarını (açınım) önceden hesapla
   var SHIFT = (+D.tip === 0) ? per.P / 2 : 0;
   function sw(s) { return (s + SHIFT) % per.P; }
+  // freze: takım ucu dış profilin içinde mi (malzemede)?
+  function inMat(q) {
+    if (+D.tip === 0) return Math.hypot(q.u, q.v) < prof.a - 0.02;
+    return Math.abs(q.u) < prof.a - 0.02 && Math.abs(q.v) < prof.b - 0.02;
+  }
   var unf = samples.cut.map(function (c) {
     var q0 = SIMCORE.sOf(per, c.p0.u, c.p0.v), q1 = SIMCORE.sOf(per, c.p1.u, c.p1.v);
-    return { x0: c.p0.x, s0: sw(q0.s), x1: c.p1.x, s1: sw(q1.s), air: q0.d > 0.5 || q1.d > 0.5, t: c.t, lim: c.limited };
+    var air = MILL ? !(inMat(c.p0) || inMat(c.p1)) : (q0.d > 0.5 || q1.d > 0.5);
+    return { x0: c.p0.x, s0: sw(q0.s), x1: c.p1.x, s1: sw(q1.s), air: air, t: c.t, lim: c.limited };
   });
   var cutTimes = samples.cut.map(function (c) { return c.t; });
 
@@ -48,16 +56,53 @@
     ["Toplam süre (tahmini)", fmtT(st.total)],
     ["Eksen max hızı X / A", limKnown ? Math.round(lim.x) + " mm/dk / " + Math.round(lim.a) + " °/dk" : "bilinmiyor"]
   ];
+  if (MILL) rows = [
+    ["Profil", isRound ? "Yuvarlak Ø" + D.D : "Dikdörtgen " + D.A + " × " + D.B + (D.R > 0 ? "  R" + D.R : "")],
+    ["Et kalınlığı", (D.t || 0) + " mm"],
+    ["Kesim açısı α1 / α2", D.beta + "° / " + D.beta2 + "°"],
+    ["X0 / L", D.x0 + " / " + D.L + " mm"],
+    ["Adet", D.adet],
+    ["Uç şekli", +D.btip === 1 ? "Balık ağzı (" + ["uç yönü", "ayna yönü", "iki uç"][+D.buc || 0] + "), Ø" + D.bcap + ", " + D.bteta + "°" : "Gönye"],
+    ["Takım Ø", D.tcap + " mm"],
+    ["Kesim derinliği", D.dcut + " mm"],
+    ["Delik bitirme payı", (+D.pay || 0) + " mm"],
+    ["Devir / F", D.devir + " dev/dk / " + D.hiz + " mm/dk"],
+    ["Delik sayısı", holeCount],
+    ["İş mili açık süre", fmtT(st.cutTime)],
+    ["Toplam süre (tahmini)", fmtT(st.total)],
+    ["Eksen max hızı X / A", limKnown ? Math.round(lim.x) + " mm/dk / " + Math.round(lim.a) + " °/dk" : "bilinmiyor"]
+  ];
   $("info").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("");
   var warns = [];
-  if (parsed.warn.rapidLaser > 0) warns.push("Lazer açıkken " + parsed.warn.rapidLaser + " adet G0 (rapid) hareketi var. Kesim satırlarında G1 eksik olabilir.");
+  if (MILL) {
+    // G0 ile malzeme içinde yan hareket (X/Y/A) = çarpışma
+    var bad = parsed.moves.filter(function (mv) {
+      if (mv.kind !== "rapid") return false;
+      var side = mv.from.x !== mv.to.x || mv.from.y !== mv.to.y || mv.from.a !== mv.to.a;
+      return side && (inMat(SIMCORE.toTube(mv.from, STOF)) || inMat(SIMCORE.toTube(mv.to, STOF)));
+    }).length;
+    if (bad) warns.push(bad + " adet G0 hareketi takım malzemedeyken yana gidiyor (çarpışma). Programı çalıştırmayın.");
+  } else if (parsed.warn.rapidLaser > 0) warns.push("Lazer açıkken " + parsed.warn.rapidLaser + " adet G0 (rapid) hareketi var. Kesim satırlarında G1 eksik olabilir.");
   if (parsed.warn.noFeed > 0) warns.push(parsed.warn.noFeed + " kesim satırında besleme (F) yok.");
-  if (!samples.cut.length) warns.push("Programda lazer açıkken yapılan kesim hareketi bulunamadı.");
+  if (!samples.cut.length) warns.push(MILL ? "Programda iş mili açıkken yapılan kesim hareketi bulunamadı." : "Programda lazer açıkken yapılan kesim hareketi bulunamadı.");
   if (st.extra > 0.3) warns.push("Eksen hız limiti nedeniyle " + st.limN + " kesim satırı yavaşlıyor (toplam +" + st.extra.toFixed(1) +
-     " s). Bu bölgelerde (mor) lazer tam güçte daha uzun kalır: yanık riski. Kesim hızını veya lazer gücünü düşürmeyi düşünün.");
+     (MILL ? " s). Bu bölgelerde (mor) gerçek ilerleme F'den düşük kalır; takım sürtünebilir. F'yi veya devri düşürmeyi düşünün."
+           : " s). Bu bölgelerde (mor) lazer tam güçte daha uzun kalır: yanık riski. Kesim hızını veya lazer gücünü düşürmeyi düşünün."));
   if (!limKnown) warns.push("Eksen hızları okunamadı; varsayılan değerlerle hesaplandı (X/Y/Z 3000 mm/dk, A 10000 °/dk).");
   $("warn").innerHTML = warns.map(function (w) { return "<li>" + w + "</li>"; }).join("");
   $("warnbox").style.display = warns.length ? "block" : "none";
+
+  if (MILL) {   // başlık ve gösterim metinleri
+    document.title = "Boru freze simülasyonu";
+    document.querySelector("header h1").textContent = "Boru freze simülasyonu";
+    document.querySelector("header span").textContent = "TubeMill · Mach3 · Atetik";
+    document.querySelector(".legend").innerHTML =
+      '<div><i style="background:#ff5a1f"></i>Kesilen yol (takım merkezi)</div>' +
+      '<div><i style="background:rgba(255,90,31,0.35);height:9px"></i>Kesim izi (takım Ø, açınımda)</div>' +
+      '<div><i style="background:#d68cff"></i>Hız limitine takılan kesim</div>' +
+      '<div><i style="background:#8fa3b5"></i>Boşta / havada hareket</div>' +
+      '<div style="color:#5c6670;font-size:12px;margin-top:4px">Kafa X\'te sabit; ayna boruyu X ekseninde sürer. Z0 = boru üst yüzeyi (takım ucu). Yol takım ucunun izidir; boru yarı saydam.</div>';
+  }
 
   // ---------- 3B sahne ----------
   var view3d = $("view3d");
@@ -106,6 +151,7 @@
   var tubeMat = new THREE.MeshStandardMaterial({ color: 0xb9c0c7, metalness: 0.35, roughness: 0.55, transparent: true, opacity: 1,
                                                  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   var tube = new THREE.Mesh(tubeGeo, tubeMat); tubeGroup.add(tube);
+  if (MILL) { tubeMat.opacity = 0.45; tubeMat.depthWrite = false; $("ghost").checked = true; }   // takım yolu et içinde: yarı saydam
 
   // ayna (tüple birlikte döner)
   var chuckR = size * 1.9 + 15;
@@ -138,7 +184,7 @@
 
   // delme noktaları
   var pierceMat = new THREE.MeshBasicMaterial({ color: 0xffd23f });
-  parsed.pierces.forEach(function (p) {
+  if (!MILL) parsed.pierces.forEach(function (p) {
     var q = SIMCORE.toTube(p, STOF);
     var sp = new THREE.Mesh(new THREE.SphereGeometry(Math.max(0.8, size * 0.04), 12, 8), pierceMat);
     sp.position.set(q.x, q.v, -q.u); tubeGroup.add(sp);
@@ -163,6 +209,14 @@
   var beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: 0xff3b1f }));
   var glow = new THREE.Mesh(new THREE.SphereGeometry(1.4, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffb347 }));
   nozzle.add(beam); nozzle.add(glow);
+  if (MILL) {   // freze: takım (ucu nozzle orijininde) + iş mili gövdesi
+    cone.visible = body.visible = false;
+    var tl = Math.max(15, size * 0.8), sr = Math.max(TR * 3, 12);
+    nozzle.add(new THREE.Mesh(new THREE.CylinderGeometry(TR, TR, tl, 24).translate(0, tl / 2, 0),
+                              new THREE.MeshStandardMaterial({ color: 0xd8dde2, metalness: 0.8, roughness: 0.25 })));
+    nozzle.add(new THREE.Mesh(new THREE.CylinderGeometry(sr, sr, sr * 4, 32).translate(0, tl + sr * 2, 0),
+                              new THREE.MeshStandardMaterial({ color: 0x4a525b, metalness: 0.5, roughness: 0.5 })));
+  }
   scene.add(nozzle);
 
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -225,11 +279,19 @@
       ctx.beginPath(); ctx.moveTo(X(u.x0), Y(u.s0)); ctx.lineTo(X(u.x1), Y(u.s1)); ctx.stroke();
     }
     ctx.lineCap = "round";
+    if (MILL) {   // kesim izi (takım çapı genişliğinde)
+      for (var k = 0; k < unf.length; k++) {
+        var w = unf[k];
+        if (w.air || Math.abs(w.s1 - w.s0) > P / 2) continue;
+        ctx.strokeStyle = k < nDone ? "rgba(255,90,31,0.22)" : "rgba(160,80,50,0.22)"; ctx.lineWidth = Math.max(2, 2 * TR * sc);
+        ctx.beginPath(); ctx.moveTo(X(w.x0), Y(w.s0)); ctx.lineTo(X(w.x1), Y(w.s1)); ctx.stroke();
+      }
+    }
     for (var i = 0; i < unf.length; i++) seg(i, "#7a3a26", 2);
     for (i = 0; i < nDone; i++) seg(i, "#ff5a1f", 2.2);
     // delme
     ctx.fillStyle = "#ffd23f";
-    parsed.pierces.forEach(function (p) {
+    if (!MILL) parsed.pierces.forEach(function (p) {
       var q = SIMCORE.toTube(p, STOF), s = sw(SIMCORE.sOf(per, q.u, q.v).s);
       ctx.beginPath(); ctx.arc(X(q.x), Y(s), 3.2, 0, 7); ctx.fill();
     });
@@ -265,14 +327,14 @@
     carriage.position.x = HEADX - p.x;
     nozzle.position.set(HEADX, p.z + ZOFS, -p.y);
     var stof = Math.max(0.2, +D.stof || 1);
-    beam.scale.set(1, stof, 1); beam.visible = s.laser;
-    glow.position.set(0, -stof, 0); glow.visible = s.laser;
+    beam.scale.set(1, stof, 1); beam.visible = s.laser && !MILL;
+    glow.position.set(0, -stof, 0); glow.visible = s.laser && !MILL;
     var nd = countDone(simT);
     cutDone.geometry.setDrawRange(0, nd * 2);
     $("time").textContent = fmtT(simT) + " / " + fmtT(TOTAL);
     $("pos").textContent = "X (parça) " + p.x.toFixed(2) + "   Y " + p.y.toFixed(2) + "   Z " + p.z.toFixed(2) + "   A " + p.a.toFixed(1) + "°";
     $("laser").className = s.laser ? "on" : "";
-    $("laser").textContent = s.laser ? "Lazer açık" : "Lazer kapalı";
+    $("laser").textContent = MILL ? (s.laser ? "İş mili açık" : "İş mili kapalı") : (s.laser ? "Lazer açık" : "Lazer kapalı");
     $("line").textContent = "Satır " + s.line + (TUBE_GCODE[s.line - 1] ? ":  " + TUBE_GCODE[s.line - 1] : "");
     if (!dragging) $("scrub").value = Math.round(simT / TOTAL * 1000);
     var cur = s.laser ? SIMCORE.toTube(p, STOF) : null;

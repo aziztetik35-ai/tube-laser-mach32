@@ -8,4 +8,6 @@ tubecut.dat
 tubecut_config.txt
 wizard_state.js
 tubesim_data.js
+tubemill.dat
+tubemill_data.js
 *.tap

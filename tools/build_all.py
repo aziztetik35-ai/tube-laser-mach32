@@ -4,7 +4,7 @@
   dist/Mach3/macros/*.m1s                       (cp1252 + CRLF; profil klasörüne kopyalanır)
   dist/Mach3/Addons/TubeCutting/                 klasik wizard (2 sayfa) + tubesim.html
   dist/Mach3/Addons/TubeStudio/                  Tube Studio wizard + tubestudio.html
-  dist/Mach3/Addons/TubeMill/                    boru freze wizard'ı (mill/; makrolar M900-M906)
+  dist/Mach3/Addons/TubeMill/                    boru freze wizard'ı + tubemillsim.html (mill/; makrolar M900-M909)
   dist/previews/                                 ekran önizleme PNG'leri ve yerleşim CSV'leri
 Ayrıca dist/Mach3 içeriği depo kökündeki Mach3/ klasörüne kopyalanır (git'te tutulur, elle kopyalamak için):
   Mach3/macros/Mach3Mill/*.m1s, Mach3/Addons/TubeCutting/, Mach3/Addons/TubeStudio/
@@ -58,5 +58,6 @@ if __name__ == "__main__":
     run([os.path.join(ROOT, "studio", "build.py"), os.path.join(M3, "Addons", "TubeStudio", "tubestudio.html")], ROOT)
     build_wizard("TubeMill", ["mill/wizard/gen_page1.py", "mill/wizard/gen_page2.py"], "mill/wizard/build_set.py",
                  {"TubeMill.set", "tubemill_bg.bmp", "tubemill_sayfa2.bmp"})
+    run([os.path.join(ROOT, "sim", "build.py"), os.path.join(M3, "Addons", "TubeMill", "tubemillsim.html"), "tubemill_data.js"], ROOT)
     sync_repo_copy()
     print("Bitti ->", M3)

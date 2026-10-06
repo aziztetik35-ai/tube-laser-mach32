@@ -31,6 +31,9 @@
 '   Yuvarlak boruda delik dik izdusumdur (lazer gibi cevreye sarilmaz).
 '
 ' Delinme anindaki (et asildiktan sonra) ilerleme: F * son paso % / 100
+' Takim capi duzeltmesi (DRO 1529): olculen cap = nominal + duzeltme (asinmada -)
+' Bitirme payi (DRO 1525, yalniz delik): kaba kontur pay kadar ice, sonra
+'   tam derinlikte bir tur bitirme pasosu (delik olcusu daha dogru)
 '==========================================================
 
 PI = 3.14159265358979
@@ -61,6 +64,10 @@ x0     = GetUserDRO(1508)
 plen   = GetUserDRO(1509)
 adet   = Int(GetUserDRO(1510) + 0.5)
 tcap   = GetUserDRO(1511)
+tnom   = tcap
+tduz   = GetUserDRO(1529)
+tcap   = tcap + tduz
+pay    = GetUserDRO(1525)
 tboy   = GetUserDRO(1512)
 devir  = GetUserDRO(1513)
 hiz    = GetUserDRO(1514)
@@ -79,7 +86,7 @@ buc    = Int(GetUserDRO(1531) + 0.5)
 bcap   = GetUserDRO(1532)
 bteta  = GetUserDRO(1533)
 
-'--- MILL-LED basla (M900-M906 icinde AYNI kalmali)
+'--- MILL-LED basla (M900-M906 ve M908 icinde AYNI kalmali)
 zv = Int(GetUserDRO(1500) + 0.5)
 SetUserLED(1500, 0)
 SetUserLED(1501, 0)
@@ -192,7 +199,13 @@ If tboy <= 0 Then
   hata = "HATA: Takim kesme boyu girilmemis"
 End If
 If tcap <= 0 Then
-  hata = "HATA: Takim capi girilmemis"
+  hata = "HATA: Takim capi girilmemis (veya cap duzeltmesi cok buyuk)"
+End If
+If pay < 0 Then
+  pay = 0
+End If
+If pay > 2 Then
+  hata = "HATA: Bitirme payi en cok 2 mm olmali"
 End If
 If adet < 1 Then
   hata = "HATA: Adet en az 1 olmali"
@@ -468,7 +481,7 @@ If hata = "" Then
         Else
           dhh = kal + tasma
         End If
-        nph = nph + (Int((dhh + 0.5) / ap) + 2) * 80 + 4
+        nph = nph + (Int((dhh + 0.5) / ap) + 3) * 80 + 4
         If gaga > 0 Then
           nph = nph + 3 * (Int((dhh + 0.5) / gaga) + 2)
         End If
@@ -523,7 +536,10 @@ Else
     End If
 
     Code "(TUP FREZE - TubeMill)"
-    Code "(takim D" & tcap & " - Z0 boru ust yuzeyi takim ucuyla, Y0 boru merkezi)"
+    Code "(takim D" & tnom & " duzeltme " & tduz & " -> D" & tcap & " - Z0 boru ust yuzeyi takim ucuyla, Y0 boru merkezi)"
+    If pay > 0 Then
+      Code "(delik bitirme payi " & pay & ")"
+    End If
     Code "(kesim derinligi " & dcut & " - paso " & ap & ")"
     Code "G21 G90 G40 G49 G94 G17"
     Code "G64 P0.01"
@@ -873,10 +889,20 @@ Else
               abase = 360 * Int((acur - s0) / 360 + 0.5)
               aa = abase + s0
 
-              ' takim merkezi yolu: kontur rt kadar ice
-              Lp = L2 - rt
-              Wp = W2 - rt
-              rp = hr - rt
+              ' pas 1: kaba (rt + bitirme payi), pas 2: bitirme (rt, tam derinlikte bir tur)
+              npas = 1
+              If pay > 0.0001 Then
+                npas = 2
+              End If
+              For pas = 1 To npas
+              roff = rt
+              If pas < npas Then
+                roff = rt + pay
+              End If
+              ' takim merkezi yolu: kontur roff kadar ice
+              Lp = L2 - roff
+              Wp = W2 - roff
+              rp = hr - roff
               If Lp < 0 Then
                 Lp = 0
               End If
@@ -1034,6 +1060,7 @@ Else
                 End If
               End If
 
+              If pas = 1 Then
               ' yaklasma
               np = np + 1
               ex(np) = xc + cx(0)
@@ -1133,6 +1160,23 @@ Else
                   Next j
                 Next lap
               End If
+              Else
+                If dmod = 0 Then
+                  ' bitirme pasosu: tam derinlikte bir tur
+                  For j = 0 To ncn
+                    np = np + 1
+                    ex(np) = xc + cx(j)
+                    ey(np) = hy + cy(j)
+                    ez(np) = zb
+                    ea(np) = aa
+                    es(np) = 0
+                    ep(np) = 0
+                    ef(np) = hiz
+                    eg(np) = 0
+                  Next j
+                End If
+              End If
+              Next pas
               acur = aa
             End If
           Next hno
@@ -1213,6 +1257,31 @@ Else
 
     CloseTeachFile()
     LoadTeachFile()
+
+    '--- simulasyon verisi (Addons\TubeMill\tubemill_data.js)
+    mf = GetMainFolder()
+    If Right(mf, 1) <> "\" Then
+      mf = mf & "\"
+    End If
+    gdosya = mf & "GCode\tup_freze.tap"
+    sdosya = mf & "Addons\TubeMill\tubemill_data.js"
+    If Dir(gdosya) <> "" Then
+      q = Chr(34)
+      Open gdosya For Input As #1
+      Open sdosya For Output As #2
+      Print #2, "var TUBE_DATA = {mode:" & q & "freze" & q & ", tip:" & tip & ", D:" & dcap & ", A:" & en & ", B:" & boy & ", R:" & rk & ", t:" & kal & ", beta:" & beta & ", beta2:" & beta2 & ", x0:" & x0 & ", L:" & plen & ", adet:" & adet & ", tcap:" & tcap & ", dcut:" & dcut & ", pay:" & pay & ", devir:" & devir & ", hiz:" & hiz & ", zofs:" & zofs & ", stof:0, btip:" & btip & ", buc:" & buc & ", bcap:" & bcap & ", bteta:" & bteta & ", vx:" & GetParam("VelocitiesX") * 60 & ", vy:" & GetParam("VelocitiesY") * 60 & ", vz:" & GetParam("VelocitiesZ") * 60 & ", va:" & GetParam("VelocitiesA") * 60 & "};"
+      Print #2, "var TUBE_GCODE = ["
+      For i = 1 To 500000
+        If EOF(1) Then
+          Exit For
+        End If
+        Line Input #1, satir
+        Print #2, q & satir & q & ","
+      Next i
+      Print #2, q & q & "];"
+      Close #2
+      Close #1
+    End If
 
     sdk = Int(sure * 10 + 0.5) / 10
     SetUserDRO(1528, sdk)

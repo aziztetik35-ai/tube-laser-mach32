@@ -8,10 +8,12 @@ kafa X'te sabittir (yalnız Y ve Z hareket eder), ayna boruyu X ekseninde sürer
 | G-kod üretimi | `macros/M900.bas` |
 | Varsayılan değerler | `macros/M901.bas` |
 | Seçim butonları | `macros/M902.bas` – `M906.bas` (profil, uç şekli, balık ağzı ucu, soğutma, delik yönü) |
+| Kaydet / yükle | `macros/M907.bas` / `M908.bas` → `Addons\TubeMill\tubemill.dat` |
+| Simülasyonu aç | `macros/M909.bas` → `Addons\TubeMill\tubemillsim.html` (kaynak: kök `sim/`, freze modu) |
 | Wizard ekranları | `wizard/gen_page1.py`, `wizard/gen_page2.py`, `wizard/ui.py`, `wizard/build_set.py` |
-| Testler | `tests/test_mill.py` |
+| Testler | `tests/test_mill.py`, `tests/sim_check.js` (simülasyon sayfasını jsdom'da açar) |
 
-Derleme çıktısı: `Mach3/Addons/TubeMill/` (TubeMill.set + 2 arka plan BMP) ve `Mach3/macros/Mach3Mill/M900–M906.m1s`.
+Derleme çıktısı: `Mach3/Addons/TubeMill/` (TubeMill.set, 2 arka plan BMP, tubemillsim.html) ve `Mach3/macros/Mach3Mill/M900–M909.m1s`.
 Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 
 ## Makineyi hazırlama
@@ -32,7 +34,10 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 1. Sayfa 1: profil, ölçüler, parça boyu ve adet, takım ve proses değerleri.
 2. Sayfa 2 (*Delikler / uç >>*): uç şekli (gönye / balık ağzı) ve en çok 8 delik.
 3. *Kod üret* (M900): G-kodu üretir, `tup_freze.tap` olarak yükler. Gereken boru boyu, en küçük X0 ve kesim süresi çıktıda görünür.
-4. **İlk çalıştırma: takım havada** (Z ofseti ile, örneğin +20 mm). Yolu izleyin, sonra gerçek kesim.
+4. *Simülasyon* (M909): takımın yolunu 3B ve açınımda gösterir. Açınımda kesim izi takım çapı genişliğindedir.
+   Takım malzemedeyken G0 ile yana giden bir hareket varsa kırmızı uyarı çıkar.
+5. *Kaydet* / *Yükle* (M907 / M908): bütün değerler ve delikler `tubemill.dat` dosyasına.
+6. **İlk çalıştırma: takım havada** (Z ofseti ile, örneğin +20 mm). Yolu izleyin, sonra gerçek kesim.
 
 ## Nasıl kesiyor
 
@@ -51,6 +56,11 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
   α ≠ 90° veya balık ağzında her parçanın iki ucu ayrı kesilir, araya fire girer.
 - **Derinlik:** uç kesimi `t + taşma`. Dikdörtgende iç köşe yayı iki yüzden de kesilsin diye derinlik otomatik artar
   (`R − 0,707·(R − t) + taşma`, R > t ise). Yuvarlak boruda delik derinliği iç yüzeyin delik kenarındaki seviyesine göre hesaplanır.
+- **Takım çapı düzeltmesi** (DRO 1529): ölçülen takım çapı − nominal çap. Takım aşınınca veya delik / parça ölçüsü
+  sapınca kullanın (ör. Ø6 takım Ø5,95 ölçülürse −0,05). Bütün telafiler düzeltilmiş çapla hesaplanır.
+- **Delik bitirme payı** (DRO 1525, en çok 2 mm): delik konturu önce bu pay kadar içeride kaba kesilir, sonra tam derinlikte
+  bir tur bitirme pasosu nominal ölçüde geçer. Delik duvarı daha temiz ve ölçü daha doğru olur. Uç kesimlerinde
+  bitirme pasosu yoktur: arka uç kesimi parçayı ayırır, ikinci tur mümkün değildir.
 - **Delinme ilerlemesi:** et aşıldıktan sonra (son paso, delme sonu) ilerleme `F · Delinmede F % / 100` olur. Parça düşerken takımın yükü azalır.
 - **Delik yönü:** tırmanma = delik içinde saat yönü tersi (M3 iş mili için), konvansiyonel = saat yönü.
   Makinenizde Y ekseni yönü tersse bu ikisi yer değiştirir.
@@ -65,7 +75,8 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 - Dikdörtgende delik yüzeyin düz kısmında kalmalıdır (`|Y ofset| + W/2 ≤ yüz yarı genişliği − R`).
 - Kesilen göbek (pencere içi) serbest kalır. Büyük pencerede göbeği bant veya mıknatısla tutun.
 - Nokta sınırı: bir işlem en çok ~39000 nokta. Paso çok küçük veya delik çok derinse "Cok fazla nokta" hatası çıkar; paso derinliğini büyütün.
-- Tube Studio ve tubesim bu wizard'ı desteklemez; Mach3 Toolpath görünümünü kullanın.
+- Tube Studio bu wizard'ı desteklemez.
+- Simülasyonda takım yolu takım ucunun izidir; kesilen malzeme (katı model) gösterilmez. Açınımdaki iz dış yüzeydedir.
 - Makinede henüz denenmedi. İlk kullanımda kısa bir parçayla, havada deneyin.
 
 ## DRO / LED haritası
@@ -92,7 +103,9 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 | 1522 | A segment açısı | yuvarlak kesimde adım |
 | 1523 | Gagalama | 0 = tek seferde |
 | 1524 | Delik yönü | 0 tırmanma, 1 konvansiyonel |
+| 1525 | Delik bitirme payı | 0 = yok, en çok 2 mm |
 | 1526 / 1527 / 1528 | (çıktı) gereken boru boyu / en küçük X0 / kesim süresi (dk) | M900 yazar |
+| 1529 | Takım çapı düzeltmesi | ölçülen − nominal (±) |
 | 1530 | Uç şekli | 0 gönye, 1 balık ağzı |
 | 1531 | Balık ağzı ucu | 0 uç yönü, 1 ayna yönü, 2 iki uç |
 | 1532 / 1533 | Karşı boru Ø K / birleşim açısı θ | |
@@ -111,6 +124,7 @@ DRO ve LED numaraları lazer wizard'larıyla (1000–1297) çakışmaz; iki wiza
 
 ## Geliştirme kuralları
 
-- `MILL-LED` bloğu (LED tazeleme) M900–M906'da **aynıdır**. Değiştirirseniz hepsinde değiştirin; test kontrol eder.
+- `MILL-LED` bloğu (LED tazeleme) M900–M906 ve M908'de **aynıdır** (girinti hariç). Değiştirirseniz hepsinde değiştirin; test kontrol eder.
 - Makro dili kısıtları kök `CLAUDE.md` ile aynıdır (blok If, Sub/Function yok, cp1252).
 - Her değişiklikten sonra: `python tools/build_all.py && python mill/tests/test_mill.py`.
+- `tubemill.dat` biçimi: 1. satır sürüm (1), sonra DRO 1500–1533 ve 1600–1677, ×1000 tamsayı. Yeni DRO eklerseniz sürümü artırın.

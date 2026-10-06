@@ -7,7 +7,7 @@ If p > 2 Then
   p = 2
 End If
 SetUserDRO(1521, p)
-'--- MILL-LED basla (M900-M906 icinde AYNI kalmali)
+'--- MILL-LED basla (M900-M906 ve M908 icinde AYNI kalmali)
 zv = Int(GetUserDRO(1500) + 0.5)
 SetUserLED(1500, 0)
 SetUserLED(1501, 0)
