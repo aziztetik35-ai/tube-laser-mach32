@@ -1395,7 +1395,7 @@ if (typeof module !== "undefined") module.exports = SIMCORE;
 <script>
 // M800.m1s'ten otomatik üretildi – elle düzenlemeyin
 function runMacro(R) {
-  let v_a0 = 0, v_aang = 0, v_abase = 0, v_acur = 0, v_ad = 0, v_adet = 0, v_adim = 0, v_aq = 0, v_astep = 0, v_aynapay = 0, v_ayri = 0, v_basaci = 0, v_bcap = 0, v_beta = 0, v_beta2 = 0, v_boy = 0, v_bteta = 0, v_btip = 0, v_buc = 0, v_cent = 0, v_ceta = 0, v_ctaraf = 0, v_cu = 0, v_cv = 0, v_cxi = 0, v_cyon = 0, v_ds = 0, v_dt = 0, v_du = 0, v_dv = 0, v_dx = 0, v_ea = 0, v_ek = 0, v_en = 0, v_ep = 0, v_es = 0, v_et = 0, v_eta = 0, v_ex = 0, v_extb = 0, v_extg = 0, v_extg2 = 0, v_extl = 0, v_extr = 0, v_ey = 0, v_ez = 0, v_fire = 0, v_fs = 0, v_gdosya = 0, v_gecerli = 0, v_guc = 0, v_guvz = 0, v_h = 0, v_ha = 0, v_hang = 0, v_hata = 0, v_hb = 0, v_hd = 0, v_hh = 0, v_hiz = 0, v_hl = 0, v_hmax = 0, v_hmin = 0, v_hno = 0, v_hr = 0, v_htip = 0, v_hw = 0, v_hx = 0, v_hy = 0, v_i = 0, v_j = 0, v_jf = 0, v_jmax = 0, v_js = 0, v_k = 0, v_kerf = 0, v_kf = 0, v_l2 = 0, v_lead = 0, v_leta = 0, v_lxi = 0, v_lz = 0, v_mb = 0, v_mf = 0, v_minx0 = 0, v_mm = 0, v_mm2 = 0, v_mmc = 0, v_nadim = 0, v_nc = 0, v_nf = 0, v_nmax = 0, v_np = 0, v_npart = 0, v_npt = 0, v_op = 0, v_oto = 0, v_ov = 0, v_p = 0, v_phi = 0, v_pi = 0, v_pitch = 0, v_plen = 0, v_q = 0, v_qq = 0, v_r = 0, v_rb = 0, v_re = 0, v_res = 0, v_rk = 0, v_rr = 0, v_s0 = 0, v_sb = 0, v_sdosya = 0, v_sekil = 0, v_sg = 0, v_sgi = 0, v_stof = 0, v_tdel = 0, v_testmode = 0, v_th = 0, v_tiltmax = 0, v_tip = 0, v_tr = 0, v_u = 0, v_ue = 0, v_us = 0, v_v = 0, v_ve = 0, v_vs = 0, v_w = 0, v_w2 = 0, v_wf = 0, v_x = 0, v_x0 = 0, v_xc = 0, v_xf = 0, v_xi = 0, v_xl = 0, v_xr = 0, v_xref = 0, v_xs = 0, v_y = 0, v_y1 = 0, v_y2 = 0, v_yayilma = 0, v_yaz = 0, v_ys = 0, v_za = 0, v_zc = 0, v_zguv = 0, v_zh = 0, v_zi = 0, v_zk = 0, v_zl = 0, v_zl1 = 0, v_zl2 = 0, v_zl3 = 0, v_zofs = 0, v_zr = 0, v_zs = 0, v_zt = 0, v_zw = 0, v_zx = 0, v_zy = 0;
+  let v_a0 = 0, v_aang = 0, v_abase = 0, v_acur = 0, v_ad = 0, v_adet = 0, v_adim = 0, v_aq = 0, v_astep = 0, v_aynapay = 0, v_ayri = 0, v_basaci = 0, v_bcap = 0, v_beta = 0, v_beta2 = 0, v_boy = 0, v_bteta = 0, v_btip = 0, v_buc = 0, v_cent = 0, v_ceta = 0, v_ctaraf = 0, v_cu = 0, v_cv = 0, v_cxi = 0, v_cyon = 0, v_ds = 0, v_dt = 0, v_du = 0, v_dv = 0, v_dx = 0, v_ea = 0, v_egim = 0, v_ek = 0, v_en = 0, v_ep = 0, v_es = 0, v_et = 0, v_eta = 0, v_ex = 0, v_extb = 0, v_extg = 0, v_extg2 = 0, v_extl = 0, v_extr = 0, v_ey = 0, v_ez = 0, v_fire = 0, v_fs = 0, v_gdosya = 0, v_gecerli = 0, v_guc = 0, v_guvz = 0, v_h = 0, v_ha = 0, v_hang = 0, v_hata = 0, v_hb = 0, v_hd = 0, v_hh = 0, v_hiz = 0, v_hl = 0, v_hmax = 0, v_hmin = 0, v_hno = 0, v_hr = 0, v_htip = 0, v_hw = 0, v_hx = 0, v_hy = 0, v_i = 0, v_j = 0, v_jf = 0, v_jmax = 0, v_js = 0, v_k = 0, v_kerf = 0, v_kf = 0, v_l2 = 0, v_lead = 0, v_leta = 0, v_lxi = 0, v_lz = 0, v_mb = 0, v_mf = 0, v_minx0 = 0, v_mm = 0, v_mm2 = 0, v_mmc = 0, v_nadim = 0, v_nc = 0, v_nf = 0, v_nmax = 0, v_np = 0, v_npart = 0, v_npt = 0, v_op = 0, v_oto = 0, v_ov = 0, v_p = 0, v_phi = 0, v_pi = 0, v_pitch = 0, v_plen = 0, v_q = 0, v_qq = 0, v_r = 0, v_rb = 0, v_re = 0, v_res = 0, v_rk = 0, v_rr = 0, v_s0 = 0, v_sb = 0, v_sdosya = 0, v_sekil = 0, v_sg = 0, v_sgi = 0, v_stof = 0, v_tdel = 0, v_testmode = 0, v_th = 0, v_tiltmax = 0, v_tip = 0, v_tr = 0, v_u = 0, v_ue = 0, v_us = 0, v_uyari = 0, v_v = 0, v_ve = 0, v_vs = 0, v_w = 0, v_w2 = 0, v_wf = 0, v_x = 0, v_x0 = 0, v_xc = 0, v_xf = 0, v_xi = 0, v_xl = 0, v_xr = 0, v_xref = 0, v_xs = 0, v_y = 0, v_y1 = 0, v_y2 = 0, v_yayilma = 0, v_yaz = 0, v_ys = 0, v_za = 0, v_zc = 0, v_zguv = 0, v_zh = 0, v_zi = 0, v_zk = 0, v_zl = 0, v_zl1 = 0, v_zl2 = 0, v_zl3 = 0, v_zofs = 0, v_zr = 0, v_zs = 0, v_zt = 0, v_zw = 0, v_zx = 0, v_zy = 0;
   v_testmode = 0;
   v_aynapay = 25;
   v_basaci = 90;
@@ -1736,7 +1736,7 @@ function runMacro(R) {
     if (v_cyon < 0) {
       v_yayilma = v_yayilma + v_cent;
     }
-    v_minx0 = Math.floor((v_yayilma + 1) * 1000 + 0.5) / 1000;
+    v_minx0 = Math.floor((v_yayilma + v_kerf / 2 + 1) * 1000 + 0.5) / 1000;
     R.setuserdro(1021, v_minx0);
     if (v_ayri  ==  0) {
       R.setuserdro(1020, Math.floor((v_x0 + v_adet * v_pitch + v_extr) * 1000 + 0.5) / 1000);
@@ -1859,9 +1859,6 @@ function runMacro(R) {
         if (_g7 > 2000000) throw new Error('döngü sınırı');
         v_xl = v_x0 + v_p * v_pitch;
         v_xr = v_xl + v_plen;
-        if (v_ayri  ==  0) {
-          v_xr = v_xl + v_pitch;
-        }
         v_npart = v_npart + 1;
         for (let _e8 = (3), _s8 = (1), _g8 = 0, _f8 = (1); ; ) {
           if (_g8++ === 0) v_js = _f8; else v_js += _s8;
@@ -1869,7 +1866,7 @@ function runMacro(R) {
           if (_g8 > 2000000) throw new Error('döngü sınırı');
           v_op = 1;
           v_xf = 1;
-          v_xref = v_xl;
+          v_xref = v_xl - v_kerf / 2;
           if (v_js  ==  1) {
             if (v_ayri  ==  0) {
               if (v_p > 0) {
@@ -1887,7 +1884,7 @@ function runMacro(R) {
             v_op = 2;
           }
           if (v_js  ==  3) {
-            v_xref = v_xr;
+            v_xref = v_xr + v_kerf / 2;
             if (v_btip  ==  1) {
               if (v_buc  !=  0) {
                 v_xf = 2;
@@ -2199,8 +2196,18 @@ function runMacro(R) {
                 }
               }
               if (v_gecerli  ==  1) {
-                v_l2 = v_hl / 2;
-                v_w2 = v_hw / 2;
+                v_l2 = v_hl / 2 - v_kerf / 2;
+                v_w2 = v_hw / 2 - v_kerf / 2;
+                v_hr = v_hr - v_kerf / 2;
+                if (v_l2 < 0.01) {
+                  v_l2 = 0.01;
+                }
+                if (v_w2 < 0.01) {
+                  v_w2 = 0.01;
+                }
+                if (v_hr < 0) {
+                  v_hr = 0;
+                }
                 v_xc = v_xl + v_hx;
                 if (v_tip  ==  0) {
                   v_s0 = v_hang;
@@ -2448,7 +2455,22 @@ function runMacro(R) {
         /* dosya: Close #2 */
         /* dosya: Close #1 */
       }
-      R.message(R.cat("Program hazir - " , v_npart , " parca. Yolu kontrol edip Cycle Start"));
+      v_uyari = "";
+      if (v_tip  ==  1) {
+        if (v_sekil  !=  1) {
+          v_egim = v_mm;
+          if (v_mm2 > v_egim) {
+            v_egim = v_mm2;
+          }
+          if (v_btip  ==  1) {
+            v_egim = 1;
+          }
+          if (v_egim * R.getuserdro(1004) > v_kerf) {
+            v_uyari = "UYARI: kenar kenar egik kesimde koselerde kopru kalabilir - tek seferde onerilir. ";
+          }
+        }
+      }
+      R.message(R.cat(v_uyari , "Program hazir - " , v_npart , " parca. Yolu kontrol edip Cycle Start"));
     }
   }
 }

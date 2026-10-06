@@ -31,7 +31,9 @@ Durum: 2026-10. Öncelik: **Y** yüksek, **O** orta, **D** düşük.
 | O | Klasik wizard 2. sayfası yalnız 8 delik gösterir (M800 20 keser) | Sayfalama (1–8 / 9–16 / 17–20) veya "Studio'da düzenle" uyarısı |
 | O | Yuvarlak boruda delik konumu yalnız açı + Y ofset | Studio'da delik dizisi (n adet, adım, açı adımı) |
 | D | Serbest kontur (polyline) delik yok | Studio'da çizim + M800'e kontur dosyasından okuma |
-| D | Kerf telafisi yalnız parça aralığında | Delik konturunda yarım kerf içe kaydırma seçeneği |
+| ✔ | Kerf telafisi | **Yapıldı:** uç kesimleri kerf/2 fire tarafında, delik konturu kerf/2 içeride (sanal işleme ile doğrulandı) |
+| Y | Kenar kenar + eğik uç (dikdörtgen): köşede köprü kalıyor (cot α · t > kerf) | Şimdilik uyarı. Çözüm: yan yüzde köşeye yakın kısa ek pasolar (köşe çentiği) veya bu durumda otomatik tek seferde |
+| O | Ortak eğik kesimde (α1 = α2) eğimli yüzlerde parça (k/2)·(√(1+cot²α) − 1) kısa (45°: 0,04 mm) | Kerf'i eğime göre kaydırmak (ortak kesimde iki tarafa aynı anda uymaz; ayrı kesim gerekir) |
 
 ## Freze (TubeMill, M900–M906)
 
@@ -49,6 +51,15 @@ Durum: 2026-10. Öncelik: **Y** yüksek, **O** orta, **D** düşük.
 | D | Dikdörtgende yalnız yüz yüz kesim | Köşede A dönerek tek seferde kesim (daha az giriş/çıkış) |
 | D | 8 delik | 20 deliğe çıkarma (sayfa 2 tablosu kaydırma / ikinci tablo sayfası) |
 | D | Tube Studio TubeMill'i bilmiyor | Studio'ya "freze" modu (takım çapı, izler, M900'ün JavaScript sürümü vb2js ile) |
+
+## Sanal işleme (tests/test_vmachine.py)
+
+| Ö | Konu | Öneri |
+|---|---|---|
+| O | Lazer ışını: et içinde en çok t + R + 1 mm iner (basit model) | Gerçek kesim kapasitesi (güç, hız) ile ışın derinliği |
+| O | Zaman / ivme yok (yalnız geometri) | Mach3 ivme ve hız limitleriyle süre ve köşe yavaşlaması |
+| D | Takım sapması, titreşim, ısıl çarpılma yok | Ölçülen parçalarla karşılaştırıp düzeltme katsayısı |
+| D | Mandren / destek çarpışması yok | Boru boyu ve ayna konumu girilirse kontrol |
 
 ## Altyapı
 

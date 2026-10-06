@@ -44,14 +44,15 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 | İşlem | Yöntem |
 |---|---|
 | Yuvarlak uç kesimi | Takım radyal (Y0). A döner, her turda derinlik `ap` kadar artar (helisel giriş, dalma yok). Son tur tam derinlikte. G93 ters zaman. |
-| Dikdörtgen uç kesimi | Yüz yüz. Takım borunun dışında havada iner, yüzü Y boyunca geçer (zikzak paso). G94. |
+| Dikdörtgen uç kesimi | Yüz yüz. Takım borunun dışında havada iner, yüzü Y boyunca geçer (zikzak paso). Eğik kenarda yüz ucunda kenarı uzatmaz, köşe noktası etrafında rt yarıçaplı yayla döner. Eğik kesimde önce 0,05 mm ince paso. G94. |
 | Yuvarlak / büyük delik | Kontur takım yarıçapı kadar içe kaydırılır, rampa ile iner (her turda `ap`), son tur tam derinlikte. |
 | Delik Ø = takım Ø | Delme. Gagalama değeri > 0 ise gagalama. |
 | Oval, W = takım Ø | Yiv: takım eksen boyunca git-gel, rampa ile iner. |
 | Pencere | Köşeleri yuvarlatılmış kontur. R < takım yarıçapı ise köşe takım yarıçapında kalır. |
 
-- **Takım telafisi** makroda hesaplanır (G41/G42 yok). Uç kesiminde takım merkezi parça kenarından `rt` uzakta, fire tarafındadır.
-  Eğik kenarda X kaydırması `rt·√(1+eğim²)` olur. Tasarım ölçüsü = net parça ölçüsü.
+- **Takım telafisi** makroda hesaplanır (G41/G42 yok). Uç kesiminde takım merkezi parça kenarından `rt` uzakta, fire tarafında,
+  kenarın normali boyunca (açınımda X ve çevre yönünde). Tasarım ölçüsü = net parça ölçüsü.
+  Sanal işleme testi (`tests/test_vmachine.py`) çıkan parçanın boyunu, kenarlarını ve deliklerini ±0,07 mm doğrular.
 - **Kesim izi = takım çapı.** 90° gönyede ardışık parçalar bir kesimi paylaşır (parça aralığı L + takım Ø).
   α ≠ 90° veya balık ağzında her parçanın iki ucu ayrı kesilir, araya fire girer.
 - **Derinlik:** uç kesimi `t + taşma`. Dikdörtgende iç köşe yayı iki yüzden de kesilsin diye derinlik otomatik artar
@@ -69,7 +70,10 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
 ## Sınırlar
 
 - Takım düşeydir: kesimin et içindeki yüzü radyaldir. Kalın ette eğik gönye yüzü tam düzlem olmaz.
-- Çok dik balık ağzında (K ≈ boru çapı) kenar eğimi 3:1 ile sınırlanır; kenarı kontrol edin.
+  Dikdörtgen eğik kesimde yan yüzlerde düzlem yükseklikle kayar: makro takımı hiçbir yerde parçaya daldırmaz;
+  dış yüzey kenarı tam (±cot α · 0,05), et içinde fazla et kalır (bir yan yüzde basamak ≤ cot α · ap, diğerinde ≤ cot α · t).
+  Gönye birleşiminde iç köşe dolu kalabilir; gerekirse eğe ile alın.
+- Çok dik balık ağzında (K ≈ boru çapı) kenarın eğrilik yarıçapı takım yarıçapından küçükse takım o bölgeye giremez.
 - Yuvarlak boruda delik dik izdüşümdür (matkap tezgâhı gibi), lazer gibi çevreye sarılmaz.
   Delik kenarı iç yarıçapın içinde kalmalıdır (`|Y ofset| + W/2 < R − t − 0,5`).
 - Dikdörtgende delik yüzeyin düz kısmında kalmalıdır (`|Y ofset| + W/2 ≤ yüz yarı genişliği − R`).

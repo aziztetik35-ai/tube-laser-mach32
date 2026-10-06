@@ -396,7 +396,7 @@ If hata = "" Then
   If cyon < 0 Then
     yayilma = yayilma + cent
   End If
-  minx0 = Int((yayilma + 1) * 1000 + 0.5) / 1000
+  minx0 = Int((yayilma + kerf / 2 + 1) * 1000 + 0.5) / 1000
   SetUserDRO(1021, minx0)
   If ayri = 0 Then
     SetUserDRO(1020, Int((x0 + adet * pitch + extR) * 1000 + 0.5) / 1000)
@@ -537,10 +537,9 @@ Else
     For p = 0 To adet - 1
 
       xL = x0 + p * pitch
+      ' xL / xR = parcanin net on / arka kenari. Kesim cizgisi kerf/2 fire tarafinda (kerf telafisi):
+      ' ayri = 0'da arka kesim (xR + kerf/2) = sonraki parcanin on kesimi (xL + pitch - kerf/2)
       xR = xL + plen
-      If ayri = 0 Then
-        xR = xL + pitch
-      End If
       npart = npart + 1
 
       For js = 1 To 3
@@ -548,7 +547,7 @@ Else
         '--- bu adimda ne yapilacak (0 = yok, 1 = uc kesimi, 2 = delikler)
         op = 1
         xf = 1
-        xref = xL
+        xref = xL - kerf / 2
         If js = 1 Then
           If ayri = 0 Then
             If p > 0 Then
@@ -566,7 +565,7 @@ Else
           op = 2
         End If
         If js = 3 Then
-          xref = xR
+          xref = xR + kerf / 2
           If btip = 1 Then
             If buc <> 0 Then
               xf = 2
@@ -874,8 +873,19 @@ Else
             End If
 
             If gecerli = 1 Then
-              L2 = hl / 2
-              W2 = hw / 2
+              ' kerf telafisi: kontur kerf/2 ice (delik olcusu = tasarim olcusu)
+              L2 = hl / 2 - kerf / 2
+              W2 = hw / 2 - kerf / 2
+              hr = hr - kerf / 2
+              If L2 < 0.01 Then
+                L2 = 0.01
+              End If
+              If W2 < 0.01 Then
+                W2 = 0.01
+              End If
+              If hr < 0 Then
+                hr = 0
+              End If
               xc = xL + hx
               If tip = 0 Then
                 s0 = hang
@@ -1121,7 +1131,24 @@ Else
       Close #1
     End If
 
-    Message "Program hazir - " & npart & " parca. Yolu kontrol edip Cycle Start"
+    ' kenar kenar + egik uc: dik isin yan yuzde eti sabit X'te keser, egik duzlem et icinde
+    ' cot(alfa) * t kadar kayar. Bu kerften buyukse koselerde kopru kalir (sanal isleme testi)
+    uyari = ""
+    If tip = 1 Then
+      If sekil <> 1 Then
+        egim = mm
+        If mm2 > egim Then
+          egim = mm2
+        End If
+        If btip = 1 Then
+          egim = 1
+        End If
+        If egim * GetUserDRO(1004) > kerf Then
+          uyari = "UYARI: kenar kenar egik kesimde koselerde kopru kalabilir - tek seferde onerilir. "
+        End If
+      End If
+    End If
+    Message uyari & "Program hazir - " & npart & " parca. Yolu kontrol edip Cycle Start"
 
   End If
 End If

@@ -27,7 +27,7 @@ d.text((52, cyp - 8), "parça", font=f(12), fill=SUB)
 d.text((cxp - 16, cyp - 8), "karşı", font=f(11), fill=SUB)
 d.text((30, 296), "θ = 90°: dik T birleşim", font=f(11), fill=SUB)
 pg.note(22, 452, 302, ["Balık ağzında ve α ≠ 90° gönyede her parçanın", "iki ucu ayrı kesilir; araya fire girer.", "",
-                        "Dik takım, eğik kenarı izler: çok dik balık", "ağzında (K ≈ boru çapı) kenar eğimi sınırlanır", "(en çok 3:1); kenarı kontrol edin.", "",
+                        "Takım kenarın normali boyunca rt kaydırılır.", "Çok dik balık ağzında (K ≈ boru çapı) takım", "dar kavise giremez; simülasyonda kontrol edin.", "",
                         "Kesimin et içindeki yüzü radyaldir", "(lazer gibi). Kalın ette gönye yüzü eğik", "değil, kademelidir."], h=196)
 
 # ---- Sağ: delik tablosu ----

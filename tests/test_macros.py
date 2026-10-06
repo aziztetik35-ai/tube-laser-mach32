@@ -72,7 +72,7 @@ for (p, lab), pts in g.items():
     if not lab.startswith("delik"): continue
     n = int(lab.split()[1]); h = HOLES[n - 1]; pts = pts[1:]
     xs = [q["X"] for q in pts]; ys = [q["Y"] for q in pts]
-    L = h[4]; W = h[4] if h[0] == 1 else h[5]
+    L = h[4] - 0.2; W = (h[4] if h[0] == 1 else h[5]) - 0.2      # kerf telafisi: yol kerf/2 içeride
     cx = (max(xs) + min(xs)) / 2 - (x0 + (p - 1) * pitch)
     check(abs(cx - h[1]) < 0.01 and abs(max(xs) - min(xs) - L) < 0.01 and abs(max(ys) - min(ys) - W) < 0.01, f"parça {p} {lab}: merkez {cx:.2f} boy {max(xs)-min(xs):.2f} en {max(ys)-min(ys):.2f}")
 order = [l for l in out if l.startswith("(parca")]

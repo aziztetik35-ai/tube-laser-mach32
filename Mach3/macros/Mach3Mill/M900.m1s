@@ -13,8 +13,8 @@
 '   A0 = dikdortgende bir yuz tam yatay (Yuzey 1 ustte)
 '
 ' TAKIM TELAFISI (G41/G42 YOK, yol makroda hesaplanir):
-'   Uc kesimi: takim merkezi parca kenarindan rt kadar fire tarafinda.
-'     Egik kenarda X kaydirmasi rt * Sqr(1 + egim^2) (egim = dx/ds).
+'   Uc kesimi: takim merkezi parca kenarindan rt kadar fire tarafinda, kenarin
+'     normali boyunca (acilimda x ve cevre yonunde; egim = dx/ds).
 '   Delik: kontur rt kadar ice kaydirilir. Delik capi = takim capi -> delme.
 '
 ' KESIM:
@@ -49,6 +49,10 @@ Dim ef(40000)
 Dim eg(40000)
 Dim ek(40000)
 Dim cx(400)
+Dim fx(2000)
+Dim fy(2000)
+Dim gx(2000)
+Dim gy(2000)
 Dim cy(400)
 Dim cl(400)
 
@@ -501,7 +505,7 @@ If hata = "" Then
     If hb > ha Then
       wmax = hb
     End If
-    npc = 4 * (Int(dcut / ap) + 1) * (Int(2 * (wmax + rt + 1)) + 4)
+    npc = 4 * (Int(dcut / ap) + 2) * (Int(2 * (wmax + rt + 1)) + 160)
   End If
   If nph > npc Then
     npc = nph
@@ -657,22 +661,20 @@ Else
                 fp = 0 - mmc * sf
               Else
                 q = Rb * Rb - u * u
-                fp = 3
-                If q > 0.000001 Then
-                  fp = 0 - sf * mb + sg * u / Sqr(q) * cf / sb
-                End If
                 If q < 0 Then
                   q = 0
                 End If
+                qd = q
+                If qd < 0.00000001 Then
+                  qd = 0.00000001
+                End If
+                fp = 0 - sf * mb + sg * u / Sqr(qd) * cf / sb
                 x = xref + v * mb + sg * (Rb - Sqr(q)) / sb
               End If
-              If fp > 3 Then
-                fp = 3
-              End If
-              If fp < -3 Then
-                fp = -3
-              End If
-              x = x + yanx * rt * Sqr(1 + fp * fp)
+              ' takim merkezi = kenar + rt * normal (acilim duzleminde, x ve cevre yonunde)
+              kn = Sqr(1 + fp * fp)
+              x = x + yanx * rt / kn
+              phi = phi - yanx * rt * fp / kn / R * 180 / PI
               z = zb
               If i <= nr Then
                 z = zs0 - (zs0 - zb) * i / nr
@@ -730,52 +732,174 @@ Else
                 End If
               End If
               abase = 360 * Int((acur - th) / 360 + 0.5)
-              y1 = 0 - w - rt - 1
-              y2 = w + rt + 1
-              nf = 1
+              ' egik kesimde once 0.05 mm'lik ince paso: dis yuzey kenari tam olculu kalir
+              j0 = 1
               If xf <> 1 Then
-                nf = Int(y2 - y1) + 1
+                j0 = 0
               End If
-              For jl = 1 To nl
+              If mmc > 0.000001 Then
+                j0 = 0
+              End If
+              For jl = j0 To nl
                 dd = dcut * jl / nl
+                If jl = 0 Then
+                  dd = 0.05
+                End If
                 zz = h - dd
                 ff = hiz
                 If dd > kal + 0.0001 Then
                   ff = hizs
                 End If
-                ya = y1
-                yb = y2
-                If jl - 2 * Int(jl / 2) = 0 Then
-                  ya = y2
-                  yb = y1
+                ' --- takim yolu (yuz duzleminde, x / y): disaridan giris, -w ucunda yay, kenar ofseti, +w ucunda yay, cikis
+                ' Yan yuzde egik duzlem yukseklikle kayar; dik takim ucunun ustundeki butun eti keser. Parcaya
+                ' dalmamak icin kenar hem yuzeyde (h) hem takim ucunda (h - dd) hesaplanir, fire tarafinda kalan
+                ' secilir. Sonuc: dis yuzey kenari tam, et icinde basamak (en cok egim * ap kadar fazla et).
+                ' Kenar ofseti: kenar + rt * normal (x ve y). Egik kenarda yuz ucunda takim kenari uzatmaz:
+                ' kose noktasi etrafinda rt yaricapli yay ile doner (parcaya dalmaz). 90° gonyede yay yok.
+                nf = 1
+                If xf <> 1 Then
+                  nf = Int(2 * w) + 1
                 End If
+                nfp = 0
                 For jf = 0 To nf
-                  y = ya + (yb - ya) * jf / nf
-                  u = y * Cos(tr) + h * Sin(tr)
-                  v = h * Cos(tr) - y * Sin(tr)
-                  If xf = 1 Then
-                    x = xref + mmc * u
-                    fp = mmc * Cos(tr)
-                  Else
-                    q = Rb * Rb - v * v
-                    fp = 3
-                    If q > 0.000001 Then
-                      fp = mb * Cos(tr) - sg * v / Sqr(q) * Sin(tr) / sb
+                  y = 0 - w + 2 * w * jf / nf
+                  For zq = 1 To 2
+                    zr = h
+                    If zq = 2 Then
+                      zr = h - dd
                     End If
-                    If q < 0 Then
-                      q = 0
+                    u = y * Cos(tr) + zr * Sin(tr)
+                    v = zr * Cos(tr) - y * Sin(tr)
+                    If xf = 1 Then
+                      x = xref + mmc * u
+                      fp = mmc * Cos(tr)
+                    Else
+                      q = Rb * Rb - v * v
+                      If q < 0 Then
+                        q = 0
+                      End If
+                      qd = q
+                      If qd < 0.00000001 Then
+                        qd = 0.00000001
+                      End If
+                      fp = mb * Cos(tr) - sg * v / Sqr(qd) * Sin(tr) / sb
+                      x = xref + u * mb + sg * (Rb - Sqr(q)) / sb
                     End If
-                    x = xref + u * mb + sg * (Rb - Sqr(q)) / sb
-                  End If
-                  If fp > 3 Then
-                    fp = 3
-                  End If
-                  If fp < -3 Then
-                    fp = -3
-                  End If
-                  x = x + yanx * rt * Sqr(1 + fp * fp)
+                    If zq = 1 Then
+                      xb = x
+                      fpb = fp
+                    Else
+                      If (x - xb) * yanx > 0 Then
+                        xb = x
+                        fpb = fp
+                      End If
+                    End If
+                  Next zq
+                  x = xb
+                  fp = fpb
                   If jf = 0 Then
-                    If jl = 1 Then
+                    xe0 = x
+                    fp0 = fp
+                  End If
+                  If jf = nf Then
+                    xe1 = x
+                    fp1 = fp
+                  End If
+                  kn = Sqr(1 + fp * fp)
+                  nfp = nfp + 1
+                  fx(nfp) = x + yanx * rt / kn
+                  fy(nfp) = y - yanx * rt * fp / kn
+                Next jf
+                ngp = 0
+                For ue = 0 To 2
+                  If ue = 1 Then
+                    For jf = 1 To nfp
+                      ngp = ngp + 1
+                      gx(ngp) = fx(jf)
+                      gy(ngp) = fy(jf)
+                    Next jf
+                  Else
+                    If ue = 0 Then
+                      ccx = xe0
+                      ccy = 0 - w
+                      fpe = fp0
+                      tdd = 270
+                      dyy = -1
+                    Else
+                      ccx = xe1
+                      ccy = w
+                      fpe = fp1
+                      tdd = 90
+                      dyy = 1
+                    End If
+                    kne = Sqr(1 + fpe * fpe)
+                    nxe = yanx / kne
+                    nye = 0 - yanx * fpe / kne
+                    tnn = Atn(nye / nxe) * 180 / PI
+                    If nxe < 0 Then
+                      tnn = tnn + 180
+                    End If
+                    ta = tnn
+                    tb = tdd
+                    If ue = 0 Then
+                      ta = tdd
+                      tb = tnn
+                    End If
+                    dlt = tb - ta
+                    dlt = dlt - 360 * Int((dlt + 180) / 360)
+                    ' parca tarafi (ic yon) yayin icinde kaliyorsa ters yonden don
+                    ti = 0
+                    If yanx > 0 Then
+                      ti = 180
+                    End If
+                    If dlt >= 0 Then
+                      rel = ti - ta
+                    Else
+                      rel = ta - ti
+                    End If
+                    rel = rel - 360 * Int(rel / 360)
+                    If rel < Abs(dlt) Then
+                      If dlt >= 0 Then
+                        dlt = dlt - 360
+                      Else
+                        dlt = dlt + 360
+                      End If
+                    End If
+                    nar = Int(Abs(dlt) / 5) + 1
+                    exx = ccx
+                    If Abs(fpe) < 0.000000001 Then
+                      nar = 0
+                      exx = ccx + yanx * rt
+                    End If
+                    If ue = 0 Then
+                      ngp = ngp + 1
+                      gx(ngp) = exx
+                      gy(ngp) = ccy + dyy * (rt + 1)
+                    End If
+                    If nar > 0 Then
+                      For jf = 0 To nar
+                        tt = (ta + dlt * jf / nar) * PI / 180
+                        ngp = ngp + 1
+                        gx(ngp) = ccx + rt * Cos(tt)
+                        gy(ngp) = ccy + rt * Sin(tt)
+                      Next jf
+                    End If
+                    If ue = 2 Then
+                      ngp = ngp + 1
+                      gx(ngp) = exx
+                      gy(ngp) = ccy + dyy * (rt + 1)
+                    End If
+                  End If
+                Next ue
+                For jj = 1 To ngp
+                  ig = jj
+                  If jl - 2 * Int(jl / 2) = 0 Then
+                    ig = ngp + 1 - jj
+                  End If
+                  x = gx(ig)
+                  y = gy(ig)
+                  If jj = 1 Then
+                    If jl = j0 Then
                       np = np + 1
                       ex(np) = x
                       ey(np) = y
@@ -807,7 +931,7 @@ Else
                     ef(np) = ff
                     eg(np) = 0
                   End If
-                Next jf
+                Next jj
               Next jl
               acur = abase + th
             Next k

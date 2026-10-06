@@ -14,12 +14,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: pip install pillow
+      - run: pip install pillow numpy scipy
       - run: npm ci
       - run: python tools/build_all.py
       - run: python tests/test_macros.py
       - run: node tests/studio_ui.test.js
       - run: python mill/tests/test_mill.py
+      - run: python tests/test_vmachine.py
       - name: Mach3/ klasörü güncel mi
         run: |
           if [ -n "$(git status --porcelain -- Mach3/)" ]; then

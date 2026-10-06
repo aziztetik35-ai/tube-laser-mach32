@@ -34,6 +34,10 @@ DIY tüp lazer kesim makinası (Mach3 + döner A ekseni). Üç parça:
 - Balık ağzı: `x = xref + w·cot θ + sg·(Rb − √(Rb² − n²))/sin θ` (w eğim koordinatı, n diğer koordinat; sg: +1 arka uç, −1 ön uç).
 - `ayri = 1` (balık ağzı veya α1 ≠ α2) → her parçanın iki ucu ayrı kesilir, araya otomatik fire girer.
   `ayri = 0` → ardışık parçalar aynı kesim çizgisini paylaşır (ilk kesim boru ucunu kırpar; adet+1 kesim).
+- **Kerf telafisi (M800):** xL/xR parçanın net kenarı; uç kesim çizgisi kerf/2 fire tarafında, delik konturu kerf/2 içeride.
+  X0 = 1. parçanın net ön kenarı. Sanal işleme testi parça boyu, kenar ve delik ölçüsünü ±0,07 mm doğrular.
+- Kenar kenar + eğik uç (dikdörtgen): dik ışın yan yüzde eti sabit X'te keser; eğik düzlem et içinde cot(α)·t kayar.
+  Bu kerften büyükse köşede köprü kalır (sanal işlemede görülür) → M800 uyarır, tek seferde önerilir.
 - G-kod: G93 ters zaman besleme, her kesim satırı **G1** ile başlar (G0 modal kalırsa kesim rapid olur — test bunu yakalar).
 
 DRO / LED / etiket haritası: `docs/DRO_MAP.md`.
@@ -49,7 +53,7 @@ reference/           MachScreen örnek .set dosyaları (kayıt formatı bunlarda
 sim/                 core.js (G-kod ayrıştırma, örnekleme, açınım), app.js, shell.html, build.py
 studio/              vb2js.py, viewer.js, editor.js, studio.js, shell.html, build.py  (m800.js ÜRETİLİR)
 vendor/              three.js r128 + OrbitControls (MIT), DejaVu fontları
-tools/               build_all.py, install.py, vbrun.py (VB alt kümesini Python'da çalıştırır)
+tools/               build_all.py, install.py, vbrun.py (VB alt kümesini Python'da çalıştırır), vmachine.py (sanal işleme)
 tests/               test_macros.py, studio_ui.test.js
 mill/                TubeMill (freze): macros/M900-M909.bas, wizard/ (ui, gen_page1/2, build_set), tests/test_mill.py
 dist/                derleme çıktısı (git'e girmez)
@@ -64,10 +68,12 @@ python tools/build_all.py         # her şeyi dist/Mach3/ altına derler
 python tests/test_macros.py       # makro testleri (sözdizimi, Python==JS, geometri, kaydet/yükle/içe aktar)
 node tests/studio_ui.test.js      # Studio arayüz testi (build sonrası)
 python mill/tests/test_mill.py    # TubeMill testleri (takım telafisi, derinlik, delik, kaydet/yükle, simülasyon sayfaları; build sonrası)
+python tests/test_vmachine.py     # SANAL İŞLEME: G-kod kinematikle çalışır, et kaldırılır, çıkan parça ölçülür (pip install numpy scipy, ~3 dk)
 python tools/install.py --mach3 "C:\Mach3" --profile Mach3Mill   # Mach3'e kur (yedek alır), --dry-run ile dene
 ```
 
 **Her değişiklikten sonra:** `python tools/build_all.py && python tests/test_macros.py && node tests/studio_ui.test.js && python mill/tests/test_mill.py`.
+Kesim geometrisi (M800/M900) değiştiyse ayrıca `python tests/test_vmachine.py` (gerçek parça ölçüsü ±0,07 mm).
 Testler geçmeden "bitti" deme. Build `Mach3/` klasörünü günceller → onu da commit et. Geometri değişikliğinde yeni bir test durumu ekle.
 
 ## ALTIN KURALLAR
