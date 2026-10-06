@@ -91,6 +91,15 @@ _, msgs, *_ = vbrun.run(MAC("M800"), CASES["hata_x0"], PAR, {}, shared=True)
 check(msgs[-1].startswith("HATA: X0 en az"), "küçük X0 hatası: " + msgs[-1][:50])
 _, msgs, *_ = vbrun.run(MAC("M800"), dro({1017: 150}, HOLES), PAR, {}, shared=True)
 check("Delik 3" in msgs[-1], "parça dışı delik hatası: " + msgs[-1][:50])
+for kw, holes, want, name in [({1018: 1, 1017: 0}, (), "Parca boyu", "adet 1, L = 0"),
+                              ({}, [(1, 100, 0, 18, 10, 0, 0)], "duz kismindan", "dikdörtgende yüzeyden taşan delik"),
+                              ({}, [(7, 100, 0, 0, 10, 0, 0)], "tipi gecersiz", "geçersiz delik tipi")]:
+    _, msgs, *_ = vbrun.run(MAC("M800"), dro(kw, holes), PAR, {}, shared=True)
+    check(want in msgs[-1], f"{name} hatası: " + msgs[-1][:50])
+try:
+    out, msgs, *_ = vbrun.run(MAC("M800"), dro({1000: 0, 1016: 0.01}), PAR, {}, shared=True); ok = msgs[-1].startswith("Program hazir")
+except IndexError: ok = False
+check(ok, "A segment 0.01: nokta dizisi taşmıyor (en küçük 0.1)")
 
 print("4) Kaydet/Yükle ve İçe aktar")
 st = dro({1000: 1, 1018: 2}, HOLES); files = {}; labels = {}

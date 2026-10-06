@@ -271,14 +271,16 @@ Else
   End If
 End If
 
-If adet > 1 Then
-  If plen <= 0 Then
-    hata = "HATA: Parca boyu girilmemis"
-  End If
+If plen <= 0 Then
+  hata = "HATA: Parca boyu girilmemis"
 End If
 
 If astep <= 0 Then
   astep = 2
+End If
+' nokta dizisi (8000) tasmasin
+If astep < 0.1 Then
+  astep = 0.1
 End If
 If lead <= 0 Then
   lead = 2
@@ -411,10 +413,40 @@ If hata = "" Then
   For hno = 0 To 19
     hd = 1100 + hno * 10
     htip = Int(GetUserDRO(hd) + 0.5)
+    If htip > 3 Then
+      hata = "HATA: Delik " & (hno + 1) & " tipi gecersiz (0 yok, 1 yuvarlak, 2 oval, 3 pencere)"
+    End If
     If htip >= 1 Then
       If htip <= 3 Then
         hx = GetUserDRO(hd + 1)
         hl = GetUserDRO(hd + 4)
+        ' dikdortgende delik yuzeyin duz kisminda kalmali (kose yayina tasarsa kesim havada kalir)
+        If tip = 1 Then
+          hy = GetUserDRO(hd + 3)
+          hw = GetUserDRO(hd + 5)
+          If htip = 1 Then
+            hw = hl
+          End If
+          kf = Int(GetUserDRO(hd + 2) / 90 + 0.5)
+          kf = kf - 4 * Int(kf / 4)
+          wf = en / 2
+          If kf = 1 Then
+            wf = boy / 2
+          End If
+          If kf = 3 Then
+            wf = boy / 2
+          End If
+          rr = rk
+          If rr < 0 Then
+            rr = 0
+          End If
+          If rr > wf Then
+            rr = wf
+          End If
+          If Abs(hy) + hw / 2 > wf - rr + 0.001 Then
+            hata = "HATA: Delik " & (hno + 1) & " yuzeyin duz kismindan tasiyor - Y ofset + en/2 en cok " & (wf - rr) & " olmali"
+          End If
+        End If
         hmin = Int((extL + hl / 2) * 100 + 0.5) / 100
         hmax = Int((plen - extR - hl / 2) * 100 + 0.5) / 100
         If hx < hmin Then

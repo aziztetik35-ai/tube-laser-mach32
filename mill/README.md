@@ -64,6 +64,7 @@ Mach3'te: Wizards → Pick Wizard → **TubeMill**.
   Delik kenarı iç yarıçapın içinde kalmalıdır (`|Y ofset| + W/2 < R − t − 0,5`).
 - Dikdörtgende delik yüzeyin düz kısmında kalmalıdır (`|Y ofset| + W/2 ≤ yüz yarı genişliği − R`).
 - Kesilen göbek (pencere içi) serbest kalır. Büyük pencerede göbeği bant veya mıknatısla tutun.
+- Nokta sınırı: bir işlem en çok ~39000 nokta. Paso çok küçük veya delik çok derinse "Cok fazla nokta" hatası çıkar; paso derinliğini büyütün.
 - Tube Studio ve tubesim bu wizard'ı desteklemez; Mach3 Toolpath görünümünü kullanın.
 - Makinede henüz denenmedi. İlk kullanımda kısa bir parçayla, havada deneyin.
 

@@ -130,6 +130,8 @@ Testler geçmeden "bitti" deme. Build `Mach3/` klasörünü günceller → onu d
 
 ## Bilinen sınırlar / yapılacaklar
 
+Tam liste ve öncelikler: `docs/GELISTIRME.md` (yeni bir sınır bulursan oraya ekle).
+
 - Tek seferde modunda köşelerde A ekseni 90° dönerken yüzey yolu kısa → eksen limiti nedeniyle yavaşlama ve yanık.
   Önerilen çözüm (henüz yok): köşe geçiş bölgesi (A dönüşünü köşe öncesine yay) veya köşede güç düşürme.
 - Makinede çalıştığı görülenler: wizard ekranları, M800 kod üretimi, SetUserLabel listesi, OEM sayfa geçişi.

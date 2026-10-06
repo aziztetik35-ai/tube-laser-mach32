@@ -152,8 +152,16 @@ End If
 If astep <= 0 Then
   astep = 2
 End If
+If astep < 0.25 Then
+  astep = 0.25
+End If
 If gaga < 0 Then
   gaga = 0
+End If
+If gaga > 0 Then
+  If gaga < 0.1 Then
+    gaga = 0.1
+  End If
 End If
 
 If beta2 < 15 Then
@@ -205,6 +213,9 @@ If tip = 0 Then
   If kal * 2 >= dcap Then
     hata = "HATA: Et kalinligi capin yarisindan kucuk olmali"
   End If
+  If tcap >= dcap Then
+    hata = "HATA: Takim capi boru capindan kucuk olmali"
+  End If
 Else
   If en <= 0 Then
     hata = "HATA: EN olcusu girilmemis"
@@ -217,6 +228,12 @@ Else
   End If
   If kal * 2 >= boy Then
     hata = "HATA: Et kalinligi BOY olcusunun yarisindan kucuk olmali"
+  End If
+  If tcap >= en Then
+    hata = "HATA: Takim capi profil olcusunden kucuk olmali"
+  End If
+  If tcap >= boy Then
+    hata = "HATA: Takim capi profil olcusunden kucuk olmali"
   End If
 End If
 
@@ -379,9 +396,14 @@ If hata = "" Then
   End If
 
   ' delikler: parcanin icinde, takimdan buyuk, yuzeyde ve takim boyuna uygun
+  ' nph: deliklerin nokta sayisi ust siniri (nokta dizisi 40000)
+  nph = 0
   For hno = 0 To 7
     hd = 1600 + hno * 10
     htip = Int(GetUserDRO(hd) + 0.5)
+    If htip > 3 Then
+      hata = "HATA: Delik " & (hno + 1) & " tipi gecersiz (0 yok, 1 yuvarlak, 2 oval, 3 pencere)"
+    End If
     If htip >= 1 Then
       If htip <= 3 Then
         hx = GetUserDRO(hd + 1)
@@ -438,9 +460,42 @@ If hata = "" Then
             hata = "HATA: Delik " & (hno + 1) & " derinligi takim kesme boyundan buyuk"
           End If
         End If
+        dhh = kal + tasma + R
+        If tip = 0 Then
+          If ym <= R - kal - 0.5 Then
+            dhh = dh
+          End If
+        Else
+          dhh = kal + tasma
+        End If
+        nph = nph + (Int((dhh + 0.5) / ap) + 2) * 80 + 4
+        If gaga > 0 Then
+          nph = nph + 3 * (Int((dhh + 0.5) / gaga) + 2)
+        End If
       End If
     End If
   Next hno
+
+  ' uc kesiminin nokta sayisi ust siniri
+  nadim0 = Int(360 / astep)
+  If nadim0 < 36 Then
+    nadim0 = 36
+  End If
+  If tip = 0 Then
+    npc = (Int((dcut + 0.5) / ap) + 2) * nadim0 + 4
+  Else
+    wmax = ha
+    If hb > ha Then
+      wmax = hb
+    End If
+    npc = 4 * (Int(dcut / ap) + 1) * (Int(2 * (wmax + rt + 1)) + 4)
+  End If
+  If nph > npc Then
+    npc = nph
+  End If
+  If npc > 39000 Then
+    hata = "HATA: Cok fazla nokta (" & npc & ") - paso derinligini (ap) veya A segment acisini buyutun"
+  End If
 
 End If
 

@@ -8,6 +8,11 @@ SRC = os.path.join(ROOT, "dist", "Mach3")
 ap = argparse.ArgumentParser(); ap.add_argument("--mach3", required=True); ap.add_argument("--profile", required=True)
 ap.add_argument("--dry-run", action="store_true"); a = ap.parse_args()
 if not os.path.isdir(SRC): raise SystemExit("Önce: python tools/build_all.py")
+if not os.path.isfile(os.path.join(a.mach3, "Mach3.exe")):
+    raise SystemExit("HATA: %s içinde Mach3.exe yok - Mach3 klasörünü kontrol edin" % a.mach3)
+if not os.path.isdir(os.path.join(a.mach3, "macros", a.profile)):
+    prof = sorted(os.listdir(os.path.join(a.mach3, "macros"))) if os.path.isdir(os.path.join(a.mach3, "macros")) else []
+    raise SystemExit("HATA: profil klasörü yok: macros\\%s  -  mevcut profiller: %s" % (a.profile, ", ".join(prof) or "-"))
 stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 bak = os.path.join(a.mach3, "_yedek_tubelaser_" + stamp)
 plan = []

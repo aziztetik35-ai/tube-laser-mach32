@@ -166,9 +166,12 @@ d = dro({}); vbrun.run(MAC("M900"), d, {}, {}, shared=True)
 check(d[1528] > 0 and d[1526] > 300 and d[1527] == 1, f"çıktı DRO: boru boyu {d[1526]}, en küçük X0 {d[1527]}, süre {d[1528]} dk")
 
 print("5) Hatalar ve seçim makroları")
+out, msgs, _ = gen(dro({1522: 0.01}))
+check(msgs[-1].startswith("Program hazir"), "A segment 0.01: en küçük 0.25'e çekiliyor, dizi taşmıyor")
 for kw, holes, want in [({1506: 45}, (), "X0 en az"), ({}, [(1, 50, 0, 0, 4, 0, 0)], "takim capindan"), ({1512: 2}, (), "takim kesme boyundan"),
                         ({1500: 1}, [(1, 50, 0, 18, 10, 0, 0)], "duz kismindan"), ({}, [(1, 50, 0, 15, 10, 0, 0)], "cok genis"),
-                        ({1509: 100}, [(1, 98, 0, 0, 10, 0, 0)], "Delik 1 parcanin disinda"), ({1504: 25}, (), "Et kalinligi")]:
+                        ({1509: 100}, [(1, 98, 0, 0, 10, 0, 0)], "Delik 1 parcanin disinda"), ({1504: 25}, (), "Et kalinligi"),
+                        ({1511: 40}, (), "boru capindan"), ({}, [(7, 50, 0, 0, 10, 0, 0)], "tipi gecersiz"), ({1516: 0.01}, (), "Cok fazla nokta")]:
     out, msgs, _ = gen(dro(kw, holes))
     check(not out and want in msgs[-1], f"hata '{want}': {msgs[-1][:60]}")
 for m, dn, p, led in [("M902", 1500, 1, 1501), ("M903", 1530, 1, 1504), ("M904", 1531, 2, 1507), ("M905", 1521, 2, 1510), ("M906", 1524, 1, 1512)]:

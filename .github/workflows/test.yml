@@ -1,0 +1,29 @@
+# Her push ve PR'da: derle, tüm testleri çalıştır, depodaki Mach3/ klasörü derleme çıktısıyla aynı mı kontrol et.
+name: test
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: pip install pillow
+      - run: npm ci
+      - run: python tools/build_all.py
+      - run: python tests/test_macros.py
+      - run: node tests/studio_ui.test.js
+      - run: python mill/tests/test_mill.py
+      - name: Mach3/ klasörü güncel mi
+        run: |
+          if [ -n "$(git status --porcelain -- Mach3/)" ]; then
+            git status --porcelain -- Mach3/
+            echo "::error::Mach3/ eski. 'python tools/build_all.py' çalıştırıp Mach3/ klasörünü commit edin."
+            exit 1
+          fi
